@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Widget Example</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .content {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        p {
+            line-height: 1.6;
+            color: #666;
+        }
+        .note {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid #2196f3;
+        }
+    </style>
+</head>
+<body>
+    <div class="content">
+        <h1>Chat Widget Integration Example</h1>
+        <p>This is an example page showing how the chat widget can be integrated into any HTML page.</p>
+        
+        <div class="note">
+            <strong>Note:</strong> The chat widget will appear in the center of this page. 
+            You can pass a client_id as a URL parameter like: <code>?client_id=your-client-id</code>
+        </div>
+        
+        <h2>Features:</h2>
+        <ul>
+            <li>✅ Modular component architecture</li>
+            <li>✅ Configurable client ID via URL parameters</li>
+            <li>✅ Responsive design</li>
+            <li>✅ Real-time WebSocket communication</li>
+            <li>✅ Device and location detection</li>
+            <li>✅ Typing indicators</li>
+            <li>✅ Message history</li>
+            <li>✅ Connection status indicators</li>
+        </ul>
+        
+        <h2>Integration:</h2>
+        <p>To integrate this widget into your website, simply include the injector script with your client ID.</p>
+        
+        <pre><code>
+&lt;!-- Simple integration with injector script --&gt;
+&lt;script 
+  src="path/to/injector.js" 
+  data-client-id="your-client-id"&gt;
+&lt;/script&gt;
+
+&lt;!-- Or with URL parameters --&gt;
+&lt;script src="path/to/injector.js"&gt;&lt;/script&gt;
+&lt;!-- Then visit: yoursite.com?client_id=your-client-id --&gt;
+        </code></pre>
+    </div>
+
+    <!-- The chat widget will be injected here by the React app -->
+    <div id="root"></div>
+
+    <!-- Injector script example -->
+    <script 
+        src="./injector.js" 
+        data-client-id="demo-client-123">
+    </script>
+</body>
+</html>
