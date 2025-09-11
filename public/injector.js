@@ -3,7 +3,7 @@
 
 
   const clientId = script.getAttribute("data-client-id");
-  const baseUrl = "http://192.168.2.108:5173"; 
+  const baseUrl = "https://hailouchat.com"; 
 
   if (!clientId) {
     console.error('HailouChat: data-client-id attribute is required');
