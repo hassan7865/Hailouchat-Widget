@@ -19,15 +19,14 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
 
   const {
     messages,
-    visitorId,
     sessionId,
     loading,
     isTyping,
     unreadCount,
     startChat,
     handleWebSocketMessage,
-    markAsRead,
-    addMessage
+    resetChat,
+    markAsRead
   } = useChat({
     clientId,
     apiBase,
@@ -46,6 +45,16 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
   }, [isOpen, markAsRead]);
 
 
+  // Reset chat when connection is lost
+  useEffect(() => {
+    if (connectionStatus === 'disconnected' && chatStarted) {
+      console.log('Connection lost, resetting chat completely');
+      setChatStarted(false);
+      resetChat(); // Reset all chat state like a fresh start
+    }
+  }, [connectionStatus, chatStarted, resetChat]);
+
+
 
   const handleStartChat = async (): Promise<void> => {
     try {
@@ -62,22 +71,13 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
   const handleSendMessage = (messageText: string): void => {
     if (!messageText.trim() || connectionStatus !== 'connected') return;
 
-    const messageId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-
     const message: OutgoingMessage = {
       type: 'chat_message',
       message: messageText
     };
 
-    const userMessage = {
-      id: messageId,
-      sender_type: 'visitor' as const,
-      sender_id: visitorId || undefined,
-      message: messageText,
-      timestamp: new Date().toISOString()
-    };
-    
-    addMessage(userMessage);
+    // Don't add to UI immediately - let WebSocket echo handle it
+    // This prevents duplicate messages on mobile
 
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
@@ -102,17 +102,16 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
   };
 
   const handleCloseChat = (): void => {
-    console.log('Closing chat...');
+    console.log('Closing chat dialog...');
     
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
       typingTimeoutRef.current = null;
     }
     
-    disconnect();
-    
-    // Only close the chat window, keep the widget visible
+    // Only close the chat dialog, keep WebSocket connection active
     setIsOpen(false);
+    // Don't disconnect WebSocket - keep the session active
     // Don't reset chat started or reset chat - keep the session
     
     // Notify parent window that chat closed

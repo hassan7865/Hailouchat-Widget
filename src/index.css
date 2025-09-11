@@ -11,6 +11,8 @@ html, body {
   height: 100%;
   margin: 0;
   padding: 0;
+  /* Ensure proper mobile viewport handling */
+  position: relative;
 }
 
 /* Hide scrollbars but keep functionality */
@@ -24,4 +26,42 @@ html, body {
   width: 100%;
   height: 100%;
   overflow: hidden;
+  position: relative;
+}
+
+/* Mobile-specific styles for better keyboard handling */
+@media (max-width: 480px) {
+  html, body {
+    /* Prevent zoom on input focus */
+    -webkit-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+    /* Better touch handling */
+    touch-action: manipulation;
+    /* Prevent horizontal scroll */
+    overflow-x: hidden;
+    /* Ensure proper positioning */
+    position: relative;
+  }
+  
+  #root {
+    /* Ensure proper positioning on mobile */
+    position: relative;
+    min-height: 100vh;
+    min-height: 100dvh; /* Dynamic viewport height for better mobile support */
+    width: 100%;
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+  
+  /* Ensure textarea doesn't cause horizontal scroll */
+  textarea {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  
+  /* Prevent any element from causing horizontal overflow */
+  * {
+    max-width: 100%;
+    box-sizing: border-box;
+  }
 }

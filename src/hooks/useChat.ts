@@ -116,14 +116,12 @@ export const useChat = ({ clientId, apiBase }: UseChatProps) => {
       const currentTime = Date.now();
       
       if (currentTime - lastMessageTimeRef.current < 100) {
-        console.log('Message blocked by timing filter');
         return;
       }
       
       const messageId = data.message_id || generateMessageId();
       
       if (messageIdsRef.current.has(messageId)) {
-        console.log('Message blocked by ID filter:', messageId);
         return;
       }
       

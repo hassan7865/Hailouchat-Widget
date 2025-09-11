@@ -1,7 +1,10 @@
 (function () {
+  // Simple prevention of multiple loads
+  if (document.getElementById("hailou-chat-widget")) {
+    return;
+  }
+
   const script = document.currentScript;
-
-
   const clientId = script.getAttribute("data-client-id");
   const baseUrl = "http://192.168.2.108:5173"; 
 
@@ -10,93 +13,133 @@
     return;
   }
 
-  // Create the chat widget container
+  // Create container
   const chatContainer = document.createElement("div");
   chatContainer.id = "hailou-chat-widget";
-  chatContainer.style.position = "fixed";
-  chatContainer.style.top = "0";
-  chatContainer.style.left = "0";
-  chatContainer.style.width = "100%";
-  chatContainer.style.height = "100%";
-  chatContainer.style.pointerEvents = "none";
-  chatContainer.style.zIndex = "99999";
-  chatContainer.style.display = "flex";
-  chatContainer.style.justifyContent = "flex-end";
-  chatContainer.style.alignItems = "flex-end";
+  chatContainer.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 99999;
+    display: flex;
+    justify-content: flex-end;
+    align-items: flex-end;
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
+  `;
 
-  // Create the iframe for the chat widget
+  // Create iframe
   const iframe = document.createElement("iframe");
   iframe.src = `${baseUrl}?client_id=${clientId}`;
-  iframe.style.position = "relative";
-  iframe.style.margin = "20px";
-  iframe.style.width = "320px";
-  iframe.style.height = "450px";
-  iframe.style.border = "none";
-  iframe.style.borderRadius = "10px";
-  iframe.style.pointerEvents = "auto";
-  iframe.style.zIndex = "99999";
-  iframe.style.background = "transparent";
-  iframe.style.overflow = "hidden";
-  iframe.style.maxWidth = "calc(100vw - 40px)";
-  iframe.style.maxHeight = "calc(100vh - 40px)";
-  iframe.style.scrollbarWidth = "none"; // Firefox
-  iframe.style.msOverflowStyle = "none"; // IE/Edge
-  iframe.style.touchAction = "manipulation"; // Fix touch events
-  
-  // Mobile responsive styles
-  const mediaQuery = window.matchMedia("(max-width: 480px)");
-  const updateIframeSize = () => {
-    if (mediaQuery.matches) {
-      // Mobile: smaller size, bottom-right position
+  iframe.style.cssText = `
+    position: relative;
+    border: none;
+    border-radius: 10px;
+    pointer-events: auto;
+    z-index: 99999;
+    background: transparent;
+    overflow: hidden;
+    touch-action: manipulation;
+    outline: none;
+  `;
+
+  // Simple responsive sizing
+  function updateSize() {
+    const isMobile = window.innerWidth <= 768;
+    
+    if (isMobile) {
       iframe.style.width = "280px";
       iframe.style.height = "400px";
-      iframe.style.margin = "10px";
-      iframe.style.position = "relative";
+      iframe.style.margin = "15px";
     } else {
-      // Desktop: fixed size
       iframe.style.width = "320px";
       iframe.style.height = "450px";
       iframe.style.margin = "20px";
-      iframe.style.position = "relative";
     }
-  };
-  
-  // Set initial size
-  updateIframeSize();
-  
-  // Listen for resize events
-  mediaQuery.addEventListener('change', updateIframeSize);
-  window.addEventListener('resize', updateIframeSize);
+  }
 
-  // Listen for messages from iframe to handle center positioning on mobile
-  window.addEventListener('message', (event) => {
-    if (event.data.type === 'CHAT_OPENED' && mediaQuery.matches) {
-      // Mobile: center the iframe when chat opens
-      iframe.style.position = "fixed";
-      iframe.style.width = "90vw";
-      iframe.style.height = "80vh";
-      iframe.style.margin = "0";
-      iframe.style.left = "50%";
-      iframe.style.top = "50%";
-      iframe.style.transform = "translate(-50%, -50%)";
-      iframe.style.right = "auto";
-      iframe.style.bottom = "auto";
-      iframe.style.borderRadius = "10px";
-    } else if (event.data.type === 'CHAT_CLOSED' && mediaQuery.matches) {
-      // Mobile: return to bottom-right button position when chat closes
-      iframe.style.position = "relative";
-      iframe.style.width = "280px";
-      iframe.style.height = "400px";
-      iframe.style.margin = "10px";
-      iframe.style.left = "auto";
-      iframe.style.top = "auto";
-      iframe.style.transform = "none";
-      iframe.style.right = "auto";
-      iframe.style.bottom = "auto";
-      iframe.style.borderRadius = "10px";
+  // State tracking
+  let isFullscreen = false;
+
+  // Handle messages from iframe
+  function handleMessage(event) {
+    if (event.source !== iframe.contentWindow) return;
+    if (!event.data || typeof event.data !== 'object') return;
+
+    const isMobile = window.innerWidth <= 768;
+    
+    if (event.data.type === 'CHAT_OPENED' && isMobile) {
+      if (isFullscreen) return; // Already in fullscreen
+      
+      isFullscreen = true;
+      
+      // Mobile fullscreen with CSS transform
+      iframe.style.cssText = `
+        position: fixed !important;
+        top: 50% !important;
+        left: 50% !important;
+        transform: translate(-50%, -50%) !important;
+        width: min(95vw, 400px) !important;
+        height: min(90vh, 600px) !important;
+        margin: 0 !important;
+        border: none !important;
+        border-radius: 12px !important;
+        pointer-events: auto !important;
+        z-index: 99999 !important;
+        outline: none !important;
+        background: white !important;
+        overflow: hidden !important;
+        touch-action: manipulation !important;
+      `;
+      
+    } else if (event.data.type === 'CHAT_CLOSED' && isMobile) {
+      if (!isFullscreen) return; // Already closed
+      
+      isFullscreen = false;
+      
+      // Reset to button size
+      iframe.style.cssText = `
+        position: relative !important;
+        border: none !important;
+        border-radius: 10px !important;
+        pointer-events: auto !important;
+        z-index: 99999 !important;
+        outline: none !important;
+        background: transparent !important;
+        overflow: hidden !important;
+        touch-action: manipulation !important;
+        transform: none !important;
+        top: auto !important;
+        left: auto !important;
+      `;
+      
+      updateSize();
     }
-  });
+  }
 
+  // Initialize
+  updateSize();
+  
+  // Add to page
   chatContainer.appendChild(iframe);
   document.body.appendChild(chatContainer);
+  
+  // Event listeners
+  window.addEventListener('message', handleMessage);
+  
+  // Simple resize handler
+  let resizeTimer;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      if (!isFullscreen) {
+        updateSize();
+      }
+    }, 200);
+  });
+
 })();

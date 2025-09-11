@@ -9,8 +9,8 @@ interface ChatHeaderProps {
 }
 
 export const ChatHeader: React.FC<ChatHeaderProps> = ({ 
-  connectionStatus, 
-  onClose 
+  connectionStatus,
+  onClose
 }) => {
   return (
     <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-2 sm:p-4 flex items-center justify-between text-white">
@@ -33,15 +33,16 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
         </div>
       </div>
       
-      <div className="flex items-center">
-        <button
-          onClick={onClose}
-          className="p-1 sm:p-2  hover:bg-opacity-10 rounded-lg transition-colors duration-200"
-          type="button"
-        >
-          <X className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
-        </button>
-      </div>
+     <div className="flex items-center">
+  <button
+    onClick={onClose}
+    className="p-1 sm:p-2 hover:bg-white/10 rounded-lg transition-colors duration-200"
+    type="button"
+  >
+    <X className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
+  </button>
+</div>
+
     </div>
   );
 };
