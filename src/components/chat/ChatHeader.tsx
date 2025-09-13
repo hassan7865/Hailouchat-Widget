@@ -1,5 +1,5 @@
 import React from 'react';
-import { Bot, Wifi, WifiOff, X } from 'lucide-react';
+import { Bot, Minus, Wifi, WifiOff } from 'lucide-react';
 import type { ConnectionStatus } from '../../types/chat';
 
 
@@ -13,7 +13,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
   onClose
 }) => {
   return (
-    <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-2 sm:p-4 flex items-center justify-between text-white">
+    <div className="bg-gradient-to-r from-teal-600 to-teal-700 p-2 sm:p-4 flex items-center justify-between text-white">
       <div className="flex items-center gap-2 sm:gap-3">
         <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
           <Bot className="w-4 h-4 sm:w-6 sm:h-6 text-gray-500" />
@@ -39,7 +39,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
     className="p-1 sm:p-2 hover:bg-white/10 rounded-lg transition-colors duration-200"
     type="button"
   >
-    <X className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
+    <Minus className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
   </button>
 </div>
 

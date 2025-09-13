@@ -15,6 +15,7 @@ interface ChatWindowProps {
   sessionId: string | null;
   onStartChat: () => void;
   onSendMessage: (message: string) => void;
+  onTypingChange: (isTyping: boolean) => void;
   onClose: () => void;
 }
 
@@ -27,6 +28,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   sessionId,
   onStartChat,
   onSendMessage,
+  onTypingChange,
   onClose
 }) => {
   return (
@@ -51,6 +53,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
           <MessageInput
             onSendMessage={onSendMessage}
+            onTypingChange={onTypingChange}
             connectionStatus={connectionStatus}
             sessionId={sessionId}
           />

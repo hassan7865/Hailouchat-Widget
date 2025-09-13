@@ -14,19 +14,22 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [chatStarted, setChatStarted] = useState<boolean>(false);
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('disconnected');
+  const [hasNewMessage, setHasNewMessage] = useState<boolean>(false);
   
-    const typingTimeoutRef = useRef<number | null>(null);
+  const typingTimeoutRef = useRef<number | null>(null);
+  const lastMessageCountRef = useRef<number>(0);
 
   const {
     messages,
     sessionId,
     loading,
     isTyping,
-    unreadCount,
     startChat,
     handleWebSocketMessage,
     resetChat,
-    markAsRead
+    markAsRead,
+    sendTypingIndicator,
+    sendMessageSeen
   } = useChat({
     clientId,
     apiBase,
@@ -41,8 +44,32 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
   useEffect(() => {
     if (isOpen) {
       markAsRead();
+      setHasNewMessage(false);
     }
   }, [isOpen, markAsRead]);
+
+  // Auto-reopen when new message arrives while closed
+  useEffect(() => {
+    if (messages.length > lastMessageCountRef.current && !isOpen && chatStarted) {
+      const newMessages = messages.slice(lastMessageCountRef.current);
+      const hasAgentMessage = newMessages.some(msg => msg.sender_type === 'agent');
+      
+      if (hasAgentMessage) {
+        setHasNewMessage(true);
+        setIsOpen(true);
+      }
+    }
+    lastMessageCountRef.current = messages.length;
+  }, [messages, isOpen, chatStarted]);
+
+  // Effect to send message seen notifications for agent messages
+  useEffect(() => {
+    const lastMessage = messages[messages.length - 1];
+    if (lastMessage && lastMessage.sender_type === 'agent' && chatStarted && connectionStatus === 'connected') {
+      // Send message seen notification
+      sendMessageSeen(lastMessage.id, sendMessage);
+    }
+  }, [messages, chatStarted, connectionStatus, sendMessageSeen, sendMessage]);
 
 
   // Reset chat when connection is lost
@@ -71,34 +98,20 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
   const handleSendMessage = (messageText: string): void => {
     if (!messageText.trim() || connectionStatus !== 'connected') return;
 
+    const messageId = `${Date.now()}-${Math.random()}`;
     const message: OutgoingMessage = {
       type: 'chat_message',
-      message: messageText
+      message: messageText,
+      message_id: messageId
     };
 
     // Don't add to UI immediately - let WebSocket echo handle it
     // This prevents duplicate messages on mobile
-
-    if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current);
-    }
-    
-    const typingMessage: OutgoingMessage = {
-      type: 'typing_indicator',
-      is_typing: true
-    };
-    
-    sendMessage(typingMessage);
-
-    typingTimeoutRef.current = setTimeout(() => {
-      const stopTypingMessage: OutgoingMessage = {
-        type: 'typing_indicator',
-        is_typing: false
-      };
-      sendMessage(stopTypingMessage);
-    }, 1000);
-
     sendMessage(message);
+  };
+
+  const handleTypingChange = (isTyping: boolean): void => {
+    sendTypingIndicator(isTyping, sendMessage);
   };
 
   const handleCloseChat = (): void => {
@@ -154,14 +167,13 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
   return (
     <div className="w-full h-full relative">
       {!isOpen ? (
-        <div className="absolute bottom-4 right-4">
+        <div className={`absolute bottom-4 right-4 transition-all duration-300 ${hasNewMessage ? 'animate-bounce' : ''}`}>
           <ChatButton
             onClick={handleToggleChat}
-            unreadCount={unreadCount}
           />
         </div>
       ) : (
-        <div className="w-full h-full bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+        <div className="w-full h-full bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-in slide-in-from-bottom-4 duration-300">
           <ChatWindow
             chatStarted={chatStarted}
             loading={loading}
@@ -171,6 +183,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
             sessionId={sessionId}
             onStartChat={handleStartChat}
             onSendMessage={handleSendMessage}
+            onTypingChange={handleTypingChange}
             onClose={handleCloseChat}
           />
         </div>

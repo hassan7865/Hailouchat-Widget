@@ -16,7 +16,6 @@ export const useChat = ({ clientId, apiBase }: UseChatProps) => {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [isTyping, setIsTyping] = useState<boolean>(false);
-  const [unreadCount, setUnreadCount] = useState<number>(0);
   
   const messageIdsRef = useRef<Set<string>>(new Set());
   const lastMessageTimeRef = useRef<number>(0);
@@ -138,12 +137,18 @@ export const useChat = ({ clientId, apiBase }: UseChatProps) => {
       
       addMessage(newMsg);
       
-      if (data.sender_type === 'agent') {
-        setUnreadCount(prev => prev + 1);
-      }
-      
     } else if (data.type === 'typing_indicator') {
       setIsTyping(Boolean(data.is_typing && data.sender_type === 'agent'));
+    } else if (data.type === 'message_seen') {
+      // Handle message seen confirmation
+      if (data.sender_type === 'agent') {
+        // Agent has seen visitor's message - update message status
+        setMessages(prev => prev.map(msg => 
+          msg.sender_type === 'visitor' && msg.id === data.message_id 
+            ? { ...msg, status: 'read' as const }
+            : msg
+        ));
+      }
     } else if (data.type === 'chat_connected') {
       console.log('Chat connected confirmation:', data);
     }
@@ -153,15 +158,32 @@ export const useChat = ({ clientId, apiBase }: UseChatProps) => {
     setMessages([]);
     setVisitorId(null);
     setSessionId(null);
-    setUnreadCount(0);
     setIsTyping(false);
     messageIdsRef.current.clear();
     lastMessageTimeRef.current = 0;
   }, []);
 
   const markAsRead = useCallback(() => {
-    setUnreadCount(0);
   }, []);
+
+  const sendTypingIndicator = useCallback((isTyping: boolean, sendMessage: (message: any) => void) => {
+    if (sessionId && visitorId) {
+      sendMessage({
+        type: 'typing_indicator',
+        is_typing: isTyping
+      });
+    }
+  }, [sessionId, visitorId]);
+
+  const sendMessageSeen = useCallback((messageId: string, sendMessage: (message: any) => void) => {
+    if (sessionId && visitorId) {
+      sendMessage({
+        type: 'message_seen',
+        message_id: messageId,
+        timestamp: new Date().toISOString()
+      });
+    }
+  }, [sessionId, visitorId]);
 
   return {
     messages,
@@ -169,11 +191,12 @@ export const useChat = ({ clientId, apiBase }: UseChatProps) => {
     sessionId,
     loading,
     isTyping,
-    unreadCount,
     startChat,
     handleWebSocketMessage,
     resetChat,
     markAsRead,
-    addMessage
+    addMessage,
+    sendTypingIndicator,
+    sendMessageSeen
   };
 };

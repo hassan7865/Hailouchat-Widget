@@ -27,7 +27,7 @@ export const MessageList: React.FC<MessageListProps> = ({ messages, isTyping }) 
         <div key={msg.id} className={`flex ${isVisitor ? 'justify-end' : 'justify-start'} mb-2 sm:mb-4 px-1`}>
           <div className={`flex max-w-[85%] sm:max-w-xs lg:max-w-md ${isVisitor ? 'flex-row-reverse' : 'flex-row'} items-end gap-1 sm:gap-2`}>
           {!isVisitor && (
-            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center">
+            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-teal-600 flex items-center justify-center">
               {isSystem ? (
                 <Clock className="w-4 h-4 text-white" />
               ) : (
@@ -38,17 +38,24 @@ export const MessageList: React.FC<MessageListProps> = ({ messages, isTyping }) 
           
           <div className={`px-2 sm:px-4 py-2 rounded-2xl ${
             isVisitor 
-              ? 'bg-blue-500 text-white rounded-br-md' 
+              ? 'bg-teal-600 text-white rounded-br-md' 
               : isSystem
                 ? 'bg-yellow-100 text-yellow-800 border border-yellow-200'
                 : 'bg-gray-200 text-gray-800 rounded-bl-md'
           }`}>
             <p className="text-xs sm:text-sm leading-relaxed">{msg.message}</p>
-            <p className={`text-xs mt-1 ${
-              isVisitor ? 'text-blue-100' : 'text-gray-500'
+            <div className={`flex items-center justify-between mt-1 ${
+              isVisitor ? 'text-teal-100' : 'text-gray-500'
             }`}>
-              {formatTime(msg.timestamp)}
-            </p>
+              <p className="text-xs">
+                {formatTime(msg.timestamp)}
+              </p>
+              {isVisitor && (
+                <span className="text-xs ml-2">
+                  {msg.status === 'read' ? '✓✓' : '✓'}
+                </span>
+              )}
+            </div>
           </div>
           
           {isVisitor && (
@@ -77,7 +84,7 @@ export const MessageList: React.FC<MessageListProps> = ({ messages, isTyping }) 
           {isTyping && (
             <div className="flex justify-start mb-4">
               <div className="flex items-end gap-2">
-                <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-full bg-teal-600 flex items-center justify-center">
                   <Bot className="w-4 h-4 text-white" />
                 </div>
                 <div className="bg-gray-200 px-4 py-3 rounded-2xl rounded-bl-md">
