@@ -4,7 +4,7 @@ export interface Message {
   sender_id?: string;
   message: string;
   timestamp: string;
-  status?: 'read';
+  status?: 'delivered' | 'read';
 }
 
 export interface VisitorMetadata {

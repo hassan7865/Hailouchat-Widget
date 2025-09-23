@@ -19,11 +19,11 @@ export const useChat = ({ clientId, apiBase }: UseChatProps) => {
   
   const messageIdsRef = useRef<Set<string>>(new Set());
   const lastMessageTimeRef = useRef<number>(0);
+  const seenMessageIdsRef = useRef<Set<string>>(new Set());
 
   const addMessage = useCallback((message: Message): void => {
     setMessages(prev => {
       if (isDuplicateMessage(message, prev)) {
-        console.log('Preventing duplicate message:', message.message.substring(0, 50));
         return prev;
       }
       
@@ -42,24 +42,26 @@ export const useChat = ({ clientId, apiBase }: UseChatProps) => {
       
       const [locationData, ipAddress] = await Promise.all([locationPromise, ipPromise]);
 
-      console.log('Final location data:', locationData);
-      console.log('Final IP address:', ipAddress);
 
       const deviceInfo = getDeviceInfo();
 
+      // Get parent page URL from URL parameters (passed by injector)
+      const urlParams = new URLSearchParams(window.location.search);
+      const parentUrl = urlParams.get('parent_url');
+      const parentReferrer = urlParams.get('parent_referrer');
+      
       const requestBody: ChatInitiateRequest = {
         client_key: clientId,
         visitor_metadata: {
           name: `Visitor ${Date.now()}`,
           ip_address: ipAddress,
-          page_url: window.location.href,
-          referrer: document.referrer || undefined,
+          page_url: parentUrl || window.location.href, // Use parent URL if available
+          referrer: parentReferrer || document.referrer || undefined, // Use parent referrer if available
           ...locationData,
           ...deviceInfo
         }
       };
 
-      console.log('Starting chat with metadata:', requestBody);
 
       const response = await fetch(`${apiBase}/chat/initiate-chat`, {
         method: 'POST',
@@ -96,7 +98,6 @@ export const useChat = ({ clientId, apiBase }: UseChatProps) => {
       return { visitorId: visitor_id, sessionId: session_id };
 
     } catch (error: any) {
-      console.error('Error starting chat:', error);
       const errorMessage: Message = {
         id: generateMessageId(),
         sender_type: 'system',
@@ -132,7 +133,8 @@ export const useChat = ({ clientId, apiBase }: UseChatProps) => {
         sender_type: data.sender_type || 'agent',
         sender_id: data.sender_id,
         message: data.message,
-        timestamp: data.timestamp || new Date().toISOString()
+        timestamp: data.timestamp || new Date().toISOString(),
+        status: 'delivered' // Mark as delivered when received
       };
       
       addMessage(newMsg);
@@ -141,16 +143,12 @@ export const useChat = ({ clientId, apiBase }: UseChatProps) => {
       setIsTyping(Boolean(data.is_typing && data.sender_type === 'agent'));
     } else if (data.type === 'message_seen') {
       // Handle message seen confirmation
-      if (data.sender_type === 'agent') {
-        // Agent has seen visitor's message - update message status
-        setMessages(prev => prev.map(msg => 
-          msg.sender_type === 'visitor' && msg.id === data.message_id 
-            ? { ...msg, status: 'read' as const }
-            : msg
-        ));
-      }
+      setMessages(prev => prev.map(msg => 
+        msg.id === data.message_id 
+          ? { ...msg, status: 'read' }
+          : msg
+      ));
     } else if (data.type === 'chat_connected') {
-      console.log('Chat connected confirmation:', data);
     }
   }, [addMessage]);
 
@@ -160,6 +158,7 @@ export const useChat = ({ clientId, apiBase }: UseChatProps) => {
     setSessionId(null);
     setIsTyping(false);
     messageIdsRef.current.clear();
+    seenMessageIdsRef.current.clear();
     lastMessageTimeRef.current = 0;
   }, []);
 
@@ -176,7 +175,8 @@ export const useChat = ({ clientId, apiBase }: UseChatProps) => {
   }, [sessionId, visitorId]);
 
   const sendMessageSeen = useCallback((messageId: string, sendMessage: (message: any) => void) => {
-    if (sessionId && visitorId) {
+    if (sessionId && visitorId && !seenMessageIdsRef.current.has(messageId)) {
+      seenMessageIdsRef.current.add(messageId);
       sendMessage({
         type: 'message_seen',
         message_id: messageId,

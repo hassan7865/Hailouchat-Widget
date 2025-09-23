@@ -21,7 +21,6 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
 
   const {
     messages,
-    sessionId,
     loading,
     isTyping,
     startChat,
@@ -65,17 +64,22 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
   // Effect to send message seen notifications for agent messages
   useEffect(() => {
     const lastMessage = messages[messages.length - 1];
-    if (lastMessage && lastMessage.sender_type === 'agent' && chatStarted && connectionStatus === 'connected') {
-      // Send message seen notification
+    if (lastMessage && 
+        lastMessage.sender_type === 'agent' && 
+        chatStarted && 
+        connectionStatus === 'connected' &&
+        isOpen && // Only send seen when chat is open
+        lastMessage.status !== 'read') { // Don't send seen for already seen messages
+      // Send message seen notification for agent messages
       sendMessageSeen(lastMessage.id, sendMessage);
     }
-  }, [messages, chatStarted, connectionStatus, sendMessageSeen, sendMessage]);
+  }, [messages, chatStarted, connectionStatus, isOpen, sendMessageSeen, sendMessage]);
 
 
-  // Reset chat when connection is lost
+  // Handle connection loss - minimize chat and reset session
   useEffect(() => {
     if (connectionStatus === 'disconnected' && chatStarted) {
-      console.log('Connection lost, resetting chat completely');
+      setIsOpen(false); // Minimize the chat
       setChatStarted(false);
       resetChat(); // Reset all chat state like a fresh start
     }
@@ -91,7 +95,6 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
       const wsUrl = `${wsBase}/ws/chat/${newSessionId}/visitor/${newVisitorId}`;
       connect(wsUrl);
     } catch (error) {
-      console.error('Failed to start chat:', error);
     }
   };
 
@@ -115,7 +118,6 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
   };
 
   const handleCloseChat = (): void => {
-    console.log('Closing chat dialog...');
     
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
@@ -136,7 +138,8 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
   const handleToggleChat = (): void => {
     if (!isOpen) {
       setIsOpen(true);
-      if (!chatStarted) {
+      // If disconnected or no session, start new chat
+      if (connectionStatus === 'disconnected' || !chatStarted) {
         handleStartChat();
       }
       // Notify parent window that chat opened
@@ -154,7 +157,6 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
 
   useEffect(() => {
     return () => {
-      console.log('Component unmounting, cleaning up...');
       
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
@@ -173,14 +175,13 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
           />
         </div>
       ) : (
-        <div className="w-full h-full bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-in slide-in-from-bottom-4 duration-300">
+        <div className="w-full h-full bg-white rounded-b-2xl shadow-2xl overflow-hidden flex flex-col animate-in slide-in-from-bottom-4 duration-300">
           <ChatWindow
             chatStarted={chatStarted}
             loading={loading}
             messages={messages}
             isTyping={isTyping}
             connectionStatus={connectionStatus}
-            sessionId={sessionId}
             onStartChat={handleStartChat}
             onSendMessage={handleSendMessage}
             onTypingChange={handleTypingChange}

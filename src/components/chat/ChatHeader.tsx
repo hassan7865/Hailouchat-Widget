@@ -1,5 +1,5 @@
 import React from 'react';
-import { Bot, Minus, Wifi, WifiOff } from 'lucide-react';
+import { Minus, Square, Wifi, WifiOff } from 'lucide-react';
 import type { ConnectionStatus } from '../../types/chat';
 
 
@@ -13,36 +13,31 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
   onClose
 }) => {
   return (
-    <div className="bg-gradient-to-r from-teal-600 to-teal-700 p-2 sm:p-4 flex items-center justify-between text-white">
-      <div className="flex items-center gap-2 sm:gap-3">
-        <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
-          <Bot className="w-4 h-4 sm:w-6 sm:h-6 text-gray-500" />
+    <div className="bg-[#1E464A] p-3 flex items-center justify-between text-white">
+      <div className="flex items-center gap-2">
+        <div className="w-6 h-6 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+          <Wifi className="w-3 h-3 text-white" />
         </div>
         <div>
-          <h3 className="font-semibold text-sm sm:text-lg">Support Chat</h3>
-          <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm opacity-90">
-            {connectionStatus === 'connected' ? (
-              <Wifi className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
-            ) : connectionStatus === 'connecting' ? (
-              <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-            ) : (
-              <WifiOff className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
-            )}
-            <span className="capitalize text-white">{connectionStatus}</span>
-          </div>
+          <h3 className="font-semibold text-sm">Chat with us</h3>
         </div>
       </div>
       
-     <div className="flex items-center">
-  <button
-    onClick={onClose}
-    className="p-1 sm:p-2 hover:bg-white/10 rounded-lg transition-colors duration-200"
-    type="button"
-  >
-    <Minus className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
-  </button>
-</div>
-
+      <div className="flex items-center gap-1">
+        <button
+          className="p-1.5 hover:bg-white/10 rounded-lg transition-colors duration-200"
+          type="button"
+        >
+          <Square className="w-3 h-3 text-white" />
+        </button>
+        <button
+          onClick={onClose}
+          className="p-1.5 hover:bg-white/10 rounded-lg transition-colors duration-200"
+          type="button"
+        >
+          <Minus className="w-3 h-3 text-white" />
+        </button>
+      </div>
     </div>
   );
 };

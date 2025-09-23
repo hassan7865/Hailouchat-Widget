@@ -13,7 +13,6 @@ export const useWebSocket = ({ onMessage, onConnectionChange }: UseWebSocketProp
 
   const connect = useCallback((wsUrl: string) => {
     if (isConnectingRef.current || (websocketRef.current?.readyState === WebSocket.OPEN)) {
-      console.log('WebSocket already connecting or connected');
       return;
     }
 
@@ -24,12 +23,10 @@ export const useWebSocket = ({ onMessage, onConnectionChange }: UseWebSocketProp
       websocketRef.current.close();
     }
 
-    console.log('Connecting to WebSocket:', wsUrl);
     
     websocketRef.current = new WebSocket(wsUrl);
 
     websocketRef.current.onopen = (): void => {
-      console.log('WebSocket connected');
       onConnectionChange('connected');
       isConnectingRef.current = false;
       
@@ -41,17 +38,14 @@ export const useWebSocket = ({ onMessage, onConnectionChange }: UseWebSocketProp
 
     websocketRef.current.onmessage = (event: MessageEvent): void => {
       const data: WebSocketMessage = JSON.parse(event.data);
-      console.log('WebSocket message received:', data);
       onMessage(data);
     };
 
     websocketRef.current.onclose = (event: CloseEvent): void => {
-      console.log('WebSocket closed:', event.code, event.reason);
       onConnectionChange('disconnected');
       isConnectingRef.current = false;
       
       if (event.code !== 1000) {
-        console.log('Attempting to reconnect in 3 seconds...');
         reconnectTimeoutRef.current = setTimeout(() => {
           if (!isConnectingRef.current) {
             connect(wsUrl);
@@ -61,7 +55,6 @@ export const useWebSocket = ({ onMessage, onConnectionChange }: UseWebSocketProp
     };
 
     websocketRef.current.onerror = (error: Event): void => {
-      console.error('WebSocket error:', error);
       onConnectionChange('error');
       isConnectingRef.current = false;
     };

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Send } from 'lucide-react';
+import { Paperclip, Clipboard, MoreHorizontal } from 'lucide-react';
 import type { ConnectionStatus } from '../../types/chat';
 
 
@@ -7,33 +7,25 @@ interface MessageInputProps {
   onSendMessage: (message: string) => void;
   onTypingChange: (isTyping: boolean) => void;
   connectionStatus: ConnectionStatus;
-  sessionId: string | null;
 }
 
 export const MessageInput: React.FC<MessageInputProps> = ({ 
   onSendMessage, 
   onTypingChange,
-  connectionStatus, 
-  sessionId 
+  connectionStatus
 }) => {
   const [newMessage, setNewMessage] = useState<string>('');
   const [isTyping, setIsTyping] = useState<boolean>(false);
   const typingTimeoutRef = React.useRef<number | null>(null);
 
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>): void => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>): void => {
+    if (e.key === 'Enter') {
       e.preventDefault();
       sendMessage();
     }
   };
 
-  const handleTextareaInput = (e: React.FormEvent<HTMLTextAreaElement>): void => {
-    const target = e.target as HTMLTextAreaElement;
-    target.style.height = 'auto';
-    target.style.height = Math.min(target.scrollHeight, 120) + 'px';
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>): void => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     setNewMessage(e.target.value);
     
     // Handle typing indicator
@@ -73,43 +65,34 @@ export const MessageInput: React.FC<MessageInputProps> = ({
   };
 
   return (
-    <div className="border-t border-gray-200 p-2 sm:p-4 bg-white overflow-hidden">
-      <div className="flex items-end gap-2 sm:gap-3 w-full">
-        <div className="flex-1">
-          <textarea
+    <div className="bg-white border-t border-gray-200">
+      {/* Input Field */}
+      <div className="p-3">
+        <div className="relative">
+          <input
+            type="text"
             value={newMessage}
             onChange={handleInputChange}
             onKeyPress={handleKeyPress}
-            onInput={handleTextareaInput}
-            placeholder="Type your message..."
+            placeholder="Type a message here..."
             disabled={connectionStatus !== 'connected'}
-            rows={1}
-            className="w-full px-2 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-2xl resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base overflow-hidden"
-            style={{ minHeight: '40px', maxHeight: '120px' }}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#007B8A] focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed text-xs"
           />
+          
         </div>
-        <button
-          onClick={sendMessage}
-          disabled={connectionStatus !== 'connected' || !newMessage.trim()}
-          className="p-2 sm:p-3 bg-gradient-to-r from-teal-600 to-teal-700 text-white rounded-2xl hover:from-teal-700 hover:to-teal-800 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 transition-all duration-200 disabled:transform-none shadow-lg"
-          type="button"
-        >
-          <Send className="w-4 h-4 sm:w-5 sm:h-5" />
-        </button>
       </div>
-      
-      <div className="flex items-center justify-between mt-3 text-xs text-gray-500">
-        <div className="flex items-center gap-2">
-          <div className={`w-2 h-2 rounded-full ${
-            connectionStatus === 'connected' ? 'bg-green-500' : 
-            connectionStatus === 'connecting' ? 'bg-orange-500' :
-            connectionStatus === 'disconnected' ? 'bg-red-500' : 'bg-red-500'
-          }`}></div>
-          <span className="capitalize">{connectionStatus}</span>
-        </div>
-        {sessionId && (
-          <span>Session: {sessionId.substring(0, 8)}...</span>
-        )}
+
+      {/* Footer Action Bar */}
+      <div className="px-3 pb-3 flex items-center gap-3">
+        <button className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors">
+          <Clipboard className="w-3 h-3 text-gray-600" />
+        </button>
+        <button className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors">
+          <Paperclip className="w-3 h-3 text-gray-600" />
+        </button>
+        <button className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors">
+          <MoreHorizontal className="w-3 h-3 text-gray-600" />
+        </button>
       </div>
     </div>
   );

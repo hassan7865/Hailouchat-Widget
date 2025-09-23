@@ -6,7 +6,7 @@
 
   const script = document.currentScript;
   const clientId = script.getAttribute("data-client-id");
-  const baseUrl = "https://widget.hailouchat.com"; 
+  const baseUrl = "http://192.168.2.108:5173/"; 
 
   if (!clientId) {
     console.error('HailouChat: data-client-id attribute is required');
@@ -34,7 +34,9 @@
 
   // Create iframe
   const iframe = document.createElement("iframe");
-  iframe.src = `${baseUrl}?client_id=${clientId}`;
+  const parentUrl = window.location.href;
+  const parentReferrer = document.referrer;
+  iframe.src = `${baseUrl}?client_id=${clientId}&parent_url=${encodeURIComponent(parentUrl)}&parent_referrer=${encodeURIComponent(parentReferrer)}`;
   iframe.style.cssText = `
     position: relative;
     border: none;
