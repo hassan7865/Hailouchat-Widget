@@ -1,5 +1,5 @@
 import React from 'react';
-import { Minus, Square, Wifi, WifiOff } from 'lucide-react';
+import { Minus, Square, Wifi } from 'lucide-react';
 import type { ConnectionStatus } from '../../types/chat';
 
 
@@ -12,7 +12,9 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
   connectionStatus,
   onClose
 }) => {
+  console.log('Connection Status:', connectionStatus);
   return (
+
     <div className="bg-[#1E464A] p-3 flex items-center justify-between text-white">
       <div className="flex items-center gap-2">
         <div className="w-6 h-6 bg-white bg-opacity-20 rounded-full flex items-center justify-center">

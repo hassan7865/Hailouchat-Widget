@@ -54,7 +54,7 @@ export const useWebSocket = ({ onMessage, onConnectionChange }: UseWebSocketProp
       }
     };
 
-    websocketRef.current.onerror = (error: Event): void => {
+    websocketRef.current.onerror = (_error: Event): void => {
       onConnectionChange('error');
       isConnectingRef.current = false;
     };
