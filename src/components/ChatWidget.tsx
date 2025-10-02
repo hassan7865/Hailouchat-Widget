@@ -11,16 +11,19 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
   apiBase = DEFAULT_CONFIG.API_BASE,
   wsBase = DEFAULT_CONFIG.WS_BASE,
 }) => {
-  const [isOpen, setIsOpen] = useState<boolean>(false);
+  const [isOpen, setIsOpen] = useState<boolean>(true);
   const [chatStarted, setChatStarted] = useState<boolean>(false);
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('disconnected');
   const [hasNewMessage, setHasNewMessage] = useState<boolean>(false);
+  const [hasVisitorJoined, setHasVisitorJoined] = useState<boolean>(false);
   
   const typingTimeoutRef = useRef<number | null>(null);
   const lastMessageCountRef = useRef<number>(0);
+  const chatStartAttemptedRef = useRef<boolean>(false);
 
   const {
     messages,
+    visitorId,
     loading,
     isTyping,
     startChat,
@@ -51,7 +54,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
   useEffect(() => {
     if (messages.length > lastMessageCountRef.current && !isOpen && chatStarted) {
       const newMessages = messages.slice(lastMessageCountRef.current);
-      const hasAgentMessage = newMessages.some(msg => msg.sender_type === 'agent');
+      const hasAgentMessage = newMessages.some(msg => msg.sender_type === 'client_agent');
       
       if (hasAgentMessage) {
         setHasNewMessage(true);
@@ -65,7 +68,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
   useEffect(() => {
     const lastMessage = messages[messages.length - 1];
     if (lastMessage && 
-        lastMessage.sender_type === 'agent' && 
+        lastMessage.sender_type === 'client_agent' && 
         chatStarted && 
         connectionStatus === 'connected' &&
         isOpen && // Only send seen when chat is open
@@ -81,6 +84,8 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
     if (connectionStatus === 'disconnected' && chatStarted) {
       setIsOpen(false); // Minimize the chat
       setChatStarted(false);
+      setHasVisitorJoined(false); // Reset visitor joined state
+      chatStartAttemptedRef.current = false; // Reset chat start flag
       resetChat(); // Reset all chat state like a fresh start
     }
   }, [connectionStatus, chatStarted, resetChat]);
@@ -88,18 +93,47 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
 
 
   const handleStartChat = async (): Promise<void> => {
+    // Prevent multiple chat start attempts
+    if (chatStartAttemptedRef.current || chatStarted) {
+      return;
+    }
+    
+    chatStartAttemptedRef.current = true;
+    
     try {
       const { visitorId: newVisitorId, sessionId: newSessionId } = await startChat();
       setChatStarted(true);
+      setHasVisitorJoined(false); // Reset visitor joined state for new session
       
       const wsUrl = `${wsBase}/ws/chat/${newSessionId}/visitor/${newVisitorId}`;
       connect(wsUrl);
     } catch (error) {
+      // Reset the flag on error so it can be retried
+      chatStartAttemptedRef.current = false;
     }
   };
 
-  const handleSendMessage = (messageText: string): void => {
+  const handleSendMessage = async (messageText: string): Promise<void> => {
     if (!messageText.trim() || connectionStatus !== 'connected') return;
+
+    // Check if this is the first message from visitor in this session
+    const hasVisitorMessages = messages.some(msg => msg.sender_type === 'visitor');
+
+    // Only send visitor joined message if no visitor messages exist AND we haven't already sent it
+    if (!hasVisitorMessages && !hasVisitorJoined) {
+      // Send visitor joined system message first
+      const visitorJoinedMessage: OutgoingMessage = {
+        type: 'chat_message',
+        message: `Visitor ${visitorId?.slice(0, 8)} has joined the chat`,
+        sender_type: 'system',
+        message_id: `${Date.now()}-visitor-joined`
+      };
+      sendMessage(visitorJoinedMessage);
+      setHasVisitorJoined(true);
+      
+      // Add a small delay to ensure proper message ordering
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
 
     const messageId = `${Date.now()}-${Math.random()}`;
     const message: OutgoingMessage = {
@@ -124,12 +158,9 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
       typingTimeoutRef.current = null;
     }
     
-    // Only close the chat dialog, keep WebSocket connection active
+  
     setIsOpen(false);
-    // Don't disconnect WebSocket - keep the session active
-    // Don't reset chat started or reset chat - keep the session
-    
-    // Notify parent window that chat closed
+
     if (window.parent !== window) {
       window.parent.postMessage({ type: 'CHAT_CLOSED' }, '*');
     }

@@ -4,7 +4,7 @@ import type { ConnectionStatus } from '../../types/chat';
 
 
 interface MessageInputProps {
-  onSendMessage: (message: string) => void;
+  onSendMessage: (message: string) => void | Promise<void>;
   onTypingChange: (isTyping: boolean) => void;
   connectionStatus: ConnectionStatus;
 }
@@ -46,7 +46,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
     }, 1000);
   };
 
-  const sendMessage = (): void => {
+  const sendMessage = async (): Promise<void> => {
     if (!newMessage.trim() || connectionStatus !== 'connected') return;
 
     // Stop typing indicator when sending message
@@ -60,7 +60,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
       typingTimeoutRef.current = null;
     }
 
-    onSendMessage(newMessage.trim());
+    await onSendMessage(newMessage.trim());
     setNewMessage('');
   };
 

@@ -53,7 +53,6 @@ export const useChat = ({ clientId, apiBase }: UseChatProps) => {
       const requestBody: ChatInitiateRequest = {
         client_key: clientId,
         visitor_metadata: {
-          name: `Visitor ${Date.now()}`,
           ip_address: ipAddress,
           page_url: parentUrl || window.location.href, // Use parent URL if available
           referrer: parentReferrer || document.referrer || undefined, // Use parent referrer if available
@@ -83,17 +82,6 @@ export const useChat = ({ clientId, apiBase }: UseChatProps) => {
       
       setMessages([]);
       messageIdsRef.current.clear();
-      
-      const welcomeMessage: Message = {
-        id: generateMessageId(),
-        sender_type: 'agent',
-        sender_id: 'system',
-        message: '👋 Hello! Welcome to our support chat. How can I help you today?',
-        timestamp: new Date().toISOString()
-      };
-      
-      messageIdsRef.current.add(welcomeMessage.id);
-      addMessage(welcomeMessage);
 
       return { visitorId: visitor_id, sessionId: session_id };
 
@@ -130,7 +118,7 @@ export const useChat = ({ clientId, apiBase }: UseChatProps) => {
       
       const newMsg: Message = {
         id: messageId,
-        sender_type: data.sender_type || 'agent',
+        sender_type: data.sender_type || 'client_agent',
         sender_id: data.sender_id,
         message: data.message,
         timestamp: data.timestamp || new Date().toISOString(),
@@ -140,7 +128,7 @@ export const useChat = ({ clientId, apiBase }: UseChatProps) => {
       addMessage(newMsg);
       
     } else if (data.type === 'typing_indicator') {
-      setIsTyping(Boolean(data.is_typing && data.sender_type === 'agent'));
+      setIsTyping(Boolean(data.is_typing && data.sender_type === 'client_agent'));
     } else if (data.type === 'message_seen') {
       // Handle message seen confirmation
       setMessages(prev => prev.map(msg => 

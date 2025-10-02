@@ -69,9 +69,12 @@ export const MessageList: React.FC<MessageListProps> = ({ messages, isTyping }) 
     );
   };
 
+  // Filter out system messages for visitor display
+  const visibleMessages = messages.filter(msg => msg.sender_type !== 'system');
+
   return (
     <div className="flex-1 overflow-y-auto overflow-x-hidden bg-white">
-      {messages.length === 0 ? (
+      {visibleMessages.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-full p-3">
           <div className="text-center text-gray-500">
             <Bot className="w-8 h-8 mx-auto mb-2 opacity-50" />
@@ -80,7 +83,7 @@ export const MessageList: React.FC<MessageListProps> = ({ messages, isTyping }) 
         </div>
       ) : (
         <>
-          {messages.map(renderMessage)}
+          {visibleMessages.map(renderMessage)}
           
           {isTyping && (
             <div className="flex justify-start mb-3 px-3">

@@ -1,6 +1,6 @@
 export interface Message {
   id: string;
-  sender_type: 'visitor' | 'agent' | 'system';
+  sender_type: 'visitor' | 'client_agent' | 'system';
   sender_id?: string;
   message: string;
   timestamp: string;
@@ -35,7 +35,7 @@ export interface ChatInitiateResponse {
 
 export interface WebSocketMessage {
   type: 'chat_message' | 'typing_indicator' | 'chat_connected' | 'message_seen';
-  sender_type?: 'visitor' | 'agent' | 'system';
+  sender_type?: 'visitor' | 'client_agent' | 'system';
   sender_id?: string;
   message?: string;
   timestamp?: string;
@@ -48,6 +48,7 @@ export interface OutgoingMessage {
   message?: string;
   is_typing?: boolean;
   message_id?: string;
+  sender_type?: 'visitor' | 'client_agent' | 'system';
 }
 
 export type ConnectionStatus = 'connected' | 'disconnected' | 'error' | 'connecting';

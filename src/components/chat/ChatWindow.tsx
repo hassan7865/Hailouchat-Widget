@@ -13,7 +13,7 @@ interface ChatWindowProps {
   isTyping: boolean;
   connectionStatus: ConnectionStatus;
   onStartChat: () => void;
-  onSendMessage: (message: string) => void;
+  onSendMessage: (message: string) => void | Promise<void>;
   onTypingChange: (isTyping: boolean) => void;
   onClose: () => void;
 }
@@ -34,7 +34,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     if (!chatStarted && !loading) {
       onStartChat();
     }
-  }, [chatStarted, loading, onStartChat]);
+  }, [chatStarted, loading]); // Remove onStartChat from dependencies to prevent multiple calls
 
   // Auto-minimize when session ends (disconnected)
   useEffect(() => {
