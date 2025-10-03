@@ -10,6 +10,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
   clientId,
   apiBase = DEFAULT_CONFIG.API_BASE,
   wsBase = DEFAULT_CONFIG.WS_BASE,
+  isMobile = false,
 }) => {
   const [isOpen, setIsOpen] = useState<boolean>(true);
   const [chatStarted, setChatStarted] = useState<boolean>(false);
@@ -186,6 +187,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
     }
   };
 
+
   useEffect(() => {
     return () => {
       
@@ -198,15 +200,16 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
   }, [disconnect]);
 
   return (
-    <div className="w-full h-full relative">
+    <div className={`${isMobile ? 'w-full h-full' : 'w-full h-full'} relative ${isMobile ? 'mobile-chat-widget' : ''}`}>
       {!isOpen ? (
         <div className={`absolute bottom-4 right-4 transition-all duration-300 ${hasNewMessage ? 'animate-bounce' : ''}`}>
           <ChatButton
             onClick={handleToggleChat}
+            isMobile={isMobile}
           />
         </div>
       ) : (
-        <div className="w-full h-full bg-white rounded-b-2xl shadow-2xl overflow-hidden flex flex-col animate-in slide-in-from-bottom-4 duration-300">
+        <div className={`${isMobile ? 'w-full h-full' : 'w-full h-full'} bg-white ${isMobile ? 'rounded-none' : 'rounded-b-2xl'} shadow-2xl overflow-hidden flex flex-col animate-in slide-in-from-bottom-4 duration-300`}>
           <ChatWindow
             chatStarted={chatStarted}
             loading={loading}
@@ -217,6 +220,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
             onSendMessage={handleSendMessage}
             onTypingChange={handleTypingChange}
             onClose={handleCloseChat}
+            isMobile={isMobile}
           />
         </div>
       )}

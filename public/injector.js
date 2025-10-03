@@ -1,147 +1,242 @@
 (function () {
-  // Simple prevention of multiple loads
   if (document.getElementById("hailou-chat-widget")) {
     return;
   }
 
   const script = document.currentScript;
   const clientId = script.getAttribute("data-client-id");
-  const baseUrl = "https://widget.hailouchat.com"; ; 
+  const baseUrl = "http://192.168.2.108:5173";
 
   if (!clientId) {
-    console.error('HailouChat: data-client-id attribute is required');
+    console.error("HailouChat: data-client-id attribute is required");
     return;
   }
 
-  // Create container
+  // State
+  let isFullscreen = false;
+  let isKeyboardOpen = false;
+  let initialViewportHeight = window.innerHeight;
+  let resizeTimer;
+
+  // Check if mobile
+  const isMobile = () => window.innerWidth <= 768;
+
+  // Create elements
   const chatContainer = document.createElement("div");
   chatContainer.id = "hailou-chat-widget";
-  chatContainer.style.cssText = `
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-    z-index: 99999;
-    display: flex;
-    justify-content: flex-end;
-    align-items: flex-end;
-    overflow: hidden;
-    margin: 0;
-    padding: 0;
-  `;
 
-  // Create iframe
   const iframe = document.createElement("iframe");
   const parentUrl = window.location.href;
   const parentReferrer = document.referrer;
-  iframe.src = `${baseUrl}?client_id=${clientId}&parent_url=${encodeURIComponent(parentUrl)}&parent_referrer=${encodeURIComponent(parentReferrer)}`;
-  iframe.style.cssText = `
-    position: relative;
-    border: none;
-    border-radius: 10px;
-    pointer-events: auto;
-    z-index: 99999;
-    background: transparent;
-    overflow: hidden;
-    touch-action: manipulation;
-    outline: none;
-  `;
+  iframe.src = `${baseUrl}?client_id=${clientId}&parent_url=${encodeURIComponent(
+    parentUrl
+  )}&parent_referrer=${encodeURIComponent(parentReferrer)}&is_mobile=${isMobile()}`;
 
-  // Simple responsive sizing
-  function updateSize() {
-    const isMobile = window.innerWidth <= 768;
-    
-    if (isMobile) {
-      iframe.style.width = "280px";
-      iframe.style.height = "400px";
-      iframe.style.margin = "15px";
+  // Set body scroll state
+  function setBodyScroll(locked) {
+    if (locked) {
+      document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.width = '100%';
+      document.body.style.height = '100%';
+      document.documentElement.style.overflow = 'hidden';
     } else {
-      iframe.style.width = "320px";
-      iframe.style.height = "480px";
-      iframe.style.margin = "20px";
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
+      document.body.style.height = '';
+      document.documentElement.style.overflow = '';
     }
   }
 
-  // State tracking
-  let isFullscreen = false;
+  // Set fullscreen mode
+  function setFullscreen() {
+    setBodyScroll(true);
+    
+    chatContainer.style.cssText = `
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      height: 100dvh !important;
+      pointer-events: none !important;
+      z-index: 999999 !important;
+      margin: 0 !important;
+      padding: 0 !important;
+    `;
+    
+    iframe.style.cssText = `
+      position: absolute !important;
+      top: env(safe-area-inset-top, 0) !important;
+      left: env(safe-area-inset-left, 0) !important;
+      right: env(safe-area-inset-right, 0) !important;
+      bottom: env(safe-area-inset-bottom, 0) !important;
+      width: calc(100% - env(safe-area-inset-left, 0) - env(safe-area-inset-right, 0)) !important;
+      height: calc(100% - env(safe-area-inset-top, 0) - env(safe-area-inset-bottom, 0)) !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      border: none !important;
+      border-radius: 0 !important;
+      pointer-events: auto !important;
+      z-index: 1 !important;
+      outline: none !important;
+      background: white !important;
+      overflow: hidden !important;
+      touch-action: manipulation !important;
+      transform: none !important;
+      box-sizing: border-box !important;
+      -webkit-overflow-scrolling: touch !important;
+    `;
+  }
+
+  // Set widget (button) mode
+  function setWidgetSize() {
+    setBodyScroll(false);
+    
+    chatContainer.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 99999;
+      display: flex;
+      justify-content: flex-end;
+      align-items: flex-end;
+      overflow: hidden;
+      margin: 0;
+      padding: 0;
+    `;
+    
+    const mobile = isMobile();
+    const screenWidth = window.innerWidth;
+    const screenHeight = window.innerHeight;
+    
+    // Responsive dimensions based on screen size
+    let width, height;
+    if (mobile) {
+      // Mobile: use percentage of screen width/height
+      width = Math.min(screenWidth * 0.9, 400) + 'px';
+      height = Math.min(screenHeight * 0.6, 500) + 'px';
+    } else {
+      // Desktop: responsive based on screen size
+      if (screenWidth < 1200) {
+        width = '300px';
+        height = '450px';
+      } else if (screenWidth < 1600) {
+        width = '320px';
+        height = '500px';
+      } else {
+        width = '350px';
+        height = '550px';
+      }
+    }
+    
+    iframe.style.cssText = `
+      position: relative;
+      width: ${width};
+      height: ${height};
+      margin: ${mobile ? 'calc(15px + env(safe-area-inset-bottom, 0)) calc(15px + env(safe-area-inset-right, 0)) 15px 15px' : '20px'};
+      border: none;
+      border-radius: 10px;
+      pointer-events: auto;
+      z-index: 99999;
+      background: transparent;
+      overflow: hidden;
+      touch-action: manipulation;
+      outline: none;
+      transform: none;
+    `;
+  }
+
+  // Handle keyboard state change
+  function notifyKeyboardState(open, height) {
+    iframe.contentWindow.postMessage({
+      type: 'KEYBOARD_STATE_CHANGE',
+      isKeyboardOpen: open,
+      viewportHeight: height
+    }, '*');
+  }
 
   // Handle messages from iframe
   function handleMessage(event) {
     if (event.source !== iframe.contentWindow) return;
-    if (!event.data || typeof event.data !== 'object') return;
+    if (!event.data || typeof event.data !== "object") return;
 
-    const isMobile = window.innerWidth <= 768;
-    
-    if (event.data.type === 'CHAT_OPENED' && isMobile) {
-      if (isFullscreen) return; // Already in fullscreen
-      
-      isFullscreen = true;
-      
-      // Mobile fullscreen with CSS transform
-      iframe.style.cssText = `
-        position: fixed !important;
-        top: 50% !important;
-        left: 50% !important;
-        transform: translate(-50%, -50%) !important;
-        width: min(95vw, 400px) !important;
-        height: min(90vh, 600px) !important;
-        margin: 0 !important;
-        border: none !important;
-        border-radius: 12px !important;
-        pointer-events: auto !important;
-        z-index: 99999 !important;
-        outline: none !important;
-        background: white !important;
-        overflow: hidden !important;
-        touch-action: manipulation !important;
-      `;
-      
-    } else if (event.data.type === 'CHAT_CLOSED' && isMobile) {
-      if (!isFullscreen) return; // Already closed
-      
-      isFullscreen = false;
-      
-      // Reset to button size
-      iframe.style.cssText = `
-        position: relative !important;
-        border: none !important;
-        border-radius: 10px !important;
-        pointer-events: auto !important;
-        z-index: 99999 !important;
-        outline: none !important;
-        background: transparent !important;
-        overflow: hidden !important;
-        touch-action: manipulation !important;
-        transform: none !important;
-        top: auto !important;
-        left: auto !important;
-      `;
-      
-      updateSize();
+    if (!isMobile()) return;
+
+    if (event.data.type === "CHAT_OPENED") {
+      if (!isFullscreen) {
+        isFullscreen = true;
+        setFullscreen();
+      }
+    } else if (event.data.type === "CHAT_CLOSED") {
+      if (isFullscreen) {
+        isFullscreen = false;
+        setWidgetSize();
+      }
     }
   }
 
-  // Initialize
-  updateSize();
-  
-  // Add to page
-  chatContainer.appendChild(iframe);
-  document.body.appendChild(chatContainer);
-  
-  // Event listeners
-  window.addEventListener('message', handleMessage);
-  
-  // Simple resize handler
-  let resizeTimer;
-  window.addEventListener('resize', () => {
+  // Handle viewport changes
+  function handleViewportChange() {
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(() => {
-      if (!isFullscreen) {
-        updateSize();
+      const currentHeight = window.innerHeight;
+      const heightDiff = initialViewportHeight - currentHeight;
+      const newKeyboardState = heightDiff > 150;
+      
+      if (newKeyboardState !== isKeyboardOpen) {
+        isKeyboardOpen = newKeyboardState;
+        notifyKeyboardState(isKeyboardOpen, currentHeight);
       }
-    }, 200);
-  });
+      
+      if (isFullscreen && isMobile()) {
+        setFullscreen();
+      } else if (!isFullscreen) {
+        setWidgetSize();
+      }
+    }, 300);
+  }
 
+  // Initialize
+  if (isMobile()) {
+    isFullscreen = true;
+    setFullscreen();
+  } else {
+    setWidgetSize();
+  }
+  
+  chatContainer.appendChild(iframe);
+  document.body.appendChild(chatContainer);
+
+  // Event listeners
+  window.addEventListener("message", handleMessage);
+  window.addEventListener("resize", handleViewportChange);
+  
+  window.addEventListener("orientationchange", () => {
+    setTimeout(() => {
+      initialViewportHeight = window.innerHeight;
+      isKeyboardOpen = false;
+      handleViewportChange();
+    }, 500);
+  });
+  
+  // Visual viewport for better keyboard detection
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', () => {
+      const currentHeight = window.visualViewport.height;
+      const heightDiff = initialViewportHeight - currentHeight;
+      const newKeyboardState = heightDiff > 150;
+      
+      if (newKeyboardState !== isKeyboardOpen) {
+        isKeyboardOpen = newKeyboardState;
+        notifyKeyboardState(isKeyboardOpen, currentHeight);
+      }
+    });
+  }
 })();

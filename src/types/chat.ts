@@ -59,4 +59,5 @@ export interface ChatWidgetProps {
   wsBase?: string;
   position?: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left' | 'center';
   theme?: 'light' | 'dark';
+  isMobile?: boolean;
 }

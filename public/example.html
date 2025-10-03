@@ -1,67 +1,120 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat Widget Example</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background-color: #f5f5f5;
-        }
-        .content {
-            max-width: 800px;
-            margin: 0 auto;
-            background: white;
-            padding: 40px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        h1 {
-            color: #333;
-            text-align: center;
-        }
-        p {
-            line-height: 1.6;
-            color: #666;
-        }
-        .note {
-            background: #e3f2fd;
-            padding: 15px;
-            border-radius: 5px;
-            margin: 20px 0;
-            border-left: 4px solid #2196f3;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat Widget Example</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    .content {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      padding: 40px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #333;
+      text-align: center;
+      font-size: 2rem;
+    }
+    p {
+      line-height: 1.6;
+      color: #666;
+      font-size: 1rem;
+    }
+    .note {
+      background: #e3f2fd;
+      padding: 15px;
+      border-radius: 5px;
+      margin: 20px 0;
+      border-left: 4px solid #2196f3;
+      font-size: 0.95rem;
+    }
+    ul {
+      padding-left: 20px;
+    }
+    pre {
+      background: #f8f8f8;
+      padding: 15px;
+      border-radius: 6px;
+      overflow-x: auto;
+    }
+    code {
+      font-family: Consolas, monospace;
+      font-size: 0.9rem;
+    }
+
+    /* Loader */
+    .loader {
+      text-align: center;
+      padding: 20px;
+      color: #555;
+      font-size: 0.9rem;
+    }
+
+    /* --- Responsive Breakpoints --- */
+    @media (max-width: 768px) {
+      body {
+        padding: 10px;
+      }
+      .content {
+        padding: 20px;
+      }
+      h1 {
+        font-size: 1.6rem;
+      }
+      p, li, .note, code {
+        font-size: 0.9rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .content {
+        padding: 15px;
+      }
+      h1 {
+        font-size: 1.4rem;
+      }
+      pre {
+        font-size: 0.8rem;
+        padding: 10px;
+      }
+    }
+  </style>
 </head>
 <body>
-    <div class="content">
-        <h1>Chat Widget Integration Example</h1>
-        <p>This is an example page showing how the chat widget can be integrated into any HTML page.</p>
-        
-        <div class="note">
-            <strong>Note:</strong> The chat widget will appear in the center of this page. 
-            You can pass a client_id as a URL parameter like: <code>?client_id=your-client-id</code>
-        </div>
-        
-        <h2>Features:</h2>
-        <ul>
-            <li>✅ Modular component architecture</li>
-            <li>✅ Configurable client ID via URL parameters</li>
-            <li>✅ Responsive design</li>
-            <li>✅ Real-time WebSocket communication</li>
-            <li>✅ Device and location detection</li>
-            <li>✅ Typing indicators</li>
-            <li>✅ Message history</li>
-            <li>✅ Connection status indicators</li>
-        </ul>
-        
-        <h2>Integration:</h2>
-        <p>To integrate this widget into your website, simply include the injector script with your client ID.</p>
-        
-        <pre><code>
+  <div class="content" id="content">
+    <h1>Chat Widget Integration Example</h1>
+    <p>This is an example page showing how the chat widget can be integrated into any HTML page.</p>
+    
+    <div class="note">
+      <strong>Note:</strong> The chat widget will appear in the center of this page. 
+      You can pass a client_id as a URL parameter like: <code>?client_id=your-client-id</code>
+    </div>
+    
+    <h2>Features:</h2>
+    <ul>
+      <li>✅ Modular component architecture</li>
+      <li>✅ Configurable client ID via URL parameters</li>
+      <li>✅ Responsive design</li>
+      <li>✅ Real-time WebSocket communication</li>
+      <li>✅ Device and location detection</li>
+      <li>✅ Typing indicators</li>
+      <li>✅ Message history</li>
+      <li>✅ Connection status indicators</li>
+    </ul>
+    
+    <h2>Integration:</h2>
+    <p>To integrate this widget into your website, simply include the injector script with your client ID.</p>
+    
+    <pre><code>
 &lt;!-- Simple integration with injector script --&gt;
 &lt;script 
   src="path/to/injector.js" 
@@ -71,16 +124,50 @@
 &lt;!-- Or with URL parameters --&gt;
 &lt;script src="path/to/injector.js"&gt;&lt;/script&gt;
 &lt;!-- Then visit: yoursite.com?client_id=your-client-id --&gt;
-        </code></pre>
-    </div>
+    </code></pre>
+  </div>
 
-    <!-- The chat widget will be injected here by the React app -->
-    <div id="root"></div>
+  <!-- Loader -->
+  <div id="loader" class="loader">Loading more content...</div>
 
-    <!-- Injector script example -->
-    <script 
-        src="/injector.js" 
-        data-client-id="f01009a3-ae48-4979-964e-999ec31a5ae3">
-    </script>
+  <!-- The chat widget will be injected here by the React app -->
+  <div id="root"></div>
+
+  <!-- Injector script example -->
+  <script 
+    src="/injector.js" 
+    data-client-id="f01009a3-ae48-4979-964e-999ec31a5ae3">
+  </script>
+
+  <script>
+    const content = document.getElementById("content");
+    const loader = document.getElementById("loader");
+
+    // Function to add dummy content
+    function addMoreContent() {
+      for (let i = 0; i < 3; i++) {
+        const section = document.createElement("div");
+        section.innerHTML = `
+          <h2>Extra Section</h2>
+          <p>
+            This is some dynamically loaded content to demonstrate infinite scrolling. 
+            Scroll down to see more sections appear automatically.
+          </p>
+        `;
+        content.appendChild(section);
+      }
+    }
+
+    // Infinite scroll handler
+    window.addEventListener("scroll", () => {
+      if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 100) {
+        loader.style.display = "block";
+        setTimeout(() => {
+          addMoreContent();
+          loader.style.display = "none";
+        }, 800); // simulate network delay
+      }
+    });
+  </script>
 </body>
 </html>

@@ -1,43 +1,45 @@
 import React from 'react';
-import { Minus, Square, Wifi } from 'lucide-react';
+import { Square, Minus } from 'lucide-react';
 import type { ConnectionStatus } from '../../types/chat';
 
 
 interface ChatHeaderProps {
   connectionStatus: ConnectionStatus;
   onClose: () => void;
+  isMobile?: boolean;
 }
 
 export const ChatHeader: React.FC<ChatHeaderProps> = ({ 
   connectionStatus,
-  onClose
+  onClose,
+  isMobile = false
 }) => {
   console.log('Connection Status:', connectionStatus);
   return (
 
-    <div className="bg-[#1E464A] p-3 flex items-center justify-between text-white">
-      <div className="flex items-center gap-2">
-        <div className="w-6 h-6 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
-          <Wifi className="w-3 h-3 text-white" />
-        </div>
-        <div>
-          <h3 className="font-semibold text-sm">Chat with us</h3>
-        </div>
+    <div className={`bg-[#17494d] ${isMobile ? 'p-4' : 'p-3'} flex items-center justify-between text-white`}>
+      {/* Left side - empty for balance */}
+      <div className="w-20"></div>
+      
+      {/* Center - Chat with us text */}
+      <div className="flex-1 flex justify-center">
+        <h3 className={`font-semibold ${isMobile ? 'text-base' : 'text-sm'}`}>Chat with us</h3>
       </div>
       
-      <div className="flex items-center gap-1">
+      {/* Right side - Square and Minimize buttons */}
+      <div className="flex items-center gap-1 w-20 justify-end">
         <button
-          className="p-1.5 hover:bg-white/10 rounded-lg transition-colors duration-200"
+          className={`${isMobile ? 'p-2' : 'p-1.5'} hover:bg-white/10 rounded-lg transition-colors duration-200`}
           type="button"
         >
-          <Square className="w-3 h-3 text-white" />
+          <Square className={`${isMobile ? 'w-4 h-4' : 'w-3 h-3'} text-white`} />
         </button>
         <button
           onClick={onClose}
-          className="p-1.5 hover:bg-white/10 rounded-lg transition-colors duration-200"
+          className={`${isMobile ? 'p-2' : 'p-1.5'} hover:bg-white/10 rounded-lg transition-colors duration-200`}
           type="button"
         >
-          <Minus className="w-3 h-3 text-white" />
+          <Minus className={`${isMobile ? 'w-4 h-4' : 'w-3 h-3'} text-white`} />
         </button>
       </div>
     </div>

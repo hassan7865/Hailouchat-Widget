@@ -16,6 +16,7 @@ interface ChatWindowProps {
   onSendMessage: (message: string) => void | Promise<void>;
   onTypingChange: (isTyping: boolean) => void;
   onClose: () => void;
+  isMobile?: boolean;
 }
 
 export const ChatWindow: React.FC<ChatWindowProps> = ({
@@ -27,7 +28,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   onStartChat,
   onSendMessage,
   onTypingChange,
-  onClose
+  onClose,
+  isMobile = false,
 }) => {
   // Auto-start chat when window opens if not already started
   useEffect(() => {
@@ -44,36 +46,48 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   }, [connectionStatus, chatStarted, onClose]);
 
   return (
-    <div className="w-full h-full bg-white rounded-b-2xl flex flex-col overflow-hidden transition-all duration-300 pointer-events-auto">
+    <div className={`w-full h-full bg-white ${isMobile ? 'rounded-none' : 'rounded-b-2xl'} flex flex-col overflow-hidden transition-all duration-300 pointer-events-auto`}>
       
-      <ChatHeader
-        connectionStatus={connectionStatus}
-        onClose={onClose}
-      />
+      {/* Header Section - Fixed */}
+      <div className="flex-shrink-0">
+        <ChatHeader
+          connectionStatus={connectionStatus}
+          onClose={onClose}
+          isMobile={isMobile}
+        />
 
-      {/* Support Channel Section */}
-      <div className="bg-white p-3 border-b border-gray-100">
-        <div className="flex items-center gap-2">
-          <div className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center">
-            <Bell className="w-3 h-3 text-gray-600" />
-          </div>
-          <div>
-            <h4 className="font-semibold text-xs text-gray-900">Live Support</h4>
-            <p className="text-xs text-gray-500">Customer Support</p>
+        {/* Support Channel Section */}
+        <div className={`bg-white ${isMobile ? 'p-4' : 'p-3'} border-b border-gray-100`}>
+          <div className="flex items-center gap-2">
+            <div className={`${isMobile ? 'w-8 h-8' : 'w-6 h-6'} bg-gray-400 rounded-full flex items-center justify-center`}>
+              <Bell className={`${isMobile ? 'w-4 h-4' : 'w-3 h-3'} text-white`} />
+            </div>
+            <div>
+              <h4 className={`font-semibold ${isMobile ? 'text-sm' : 'text-xs'} text-gray-900 font-bold`}>Live Support</h4>
+              <p className={`${isMobile ? 'text-sm' : 'text-xs'} text-gray-500 font-semibold`}>Customer Support</p>
+            </div>
           </div>
         </div>
       </div>
 
-      <MessageList
-        messages={messages}
-        isTyping={isTyping}
-      />
+      {/* Messages Section - Flexible */}
+      <div className="flex-1 min-h-0">
+        <MessageList
+          messages={messages}
+          isTyping={isTyping}
+          isMobile={isMobile}
+        />
+      </div>
 
-      <MessageInput
-        onSendMessage={onSendMessage}
-        onTypingChange={onTypingChange}
-        connectionStatus={connectionStatus}
-      />
+      {/* Input Section - Fixed at Bottom */}
+      <div className="flex-shrink-0">
+        <MessageInput
+          onSendMessage={onSendMessage}
+          onTypingChange={onTypingChange}
+          connectionStatus={connectionStatus}
+          isMobile={isMobile}
+        />
+      </div>
     </div>
   );
 };
