@@ -6,7 +6,7 @@
 
   const script = document.currentScript;
   const clientId = script.getAttribute("data-client-id");
-  const baseUrl = "https://hailouchat.com"; ; 
+  const baseUrl = "https://widget.hailouchat.com"; ; 
 
   if (!clientId) {
     console.error('HailouChat: data-client-id attribute is required');
@@ -59,7 +59,7 @@
       iframe.style.margin = "15px";
     } else {
       iframe.style.width = "320px";
-      iframe.style.height = "450px";
+      iframe.style.height = "480px";
       iframe.style.margin = "20px";
     }
   }
