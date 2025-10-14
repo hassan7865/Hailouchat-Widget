@@ -28,9 +28,10 @@
   const iframe = document.createElement("iframe");
   const parentUrl = window.location.href;
   const parentReferrer = document.referrer;
+  const pageTitle = document.title;
   iframe.src = `${baseUrl}?client_id=${clientId}&parent_url=${encodeURIComponent(
     parentUrl
-  )}&parent_referrer=${encodeURIComponent(parentReferrer)}&is_mobile=${isMobile()}`;
+  )}&parent_referrer=${encodeURIComponent(parentReferrer)}&page_title=${encodeURIComponent(pageTitle)}&is_mobile=${isMobile()}`;
 
   // Set body scroll state
   function setBodyScroll(locked) {

@@ -45,20 +45,24 @@ export const useChat = ({ clientId, apiBase }: UseChatProps) => {
 
       const deviceInfo = getDeviceInfo();
 
-      // Get parent page URL from URL parameters (passed by injector)
+      // Get parent page URL, referrer, and title from URL parameters (passed by injector)
       const urlParams = new URLSearchParams(window.location.search);
       const parentUrl = urlParams.get('parent_url');
       const parentReferrer = urlParams.get('parent_referrer');
+      const pageTitle = urlParams.get('page_title');
       
+      const visitorMetadata = {
+        ip_address: ipAddress,
+        page_url: parentUrl || window.location.href, // Use parent URL if available
+        referrer: parentReferrer || document.referrer || undefined, // Use parent referrer if available
+        page_title: pageTitle || document.title, // Use parent page title if available
+        ...locationData,
+        ...deviceInfo
+      };
+
       const requestBody: ChatInitiateRequest = {
         client_key: clientId,
-        visitor_metadata: {
-          ip_address: ipAddress,
-          page_url: parentUrl || window.location.href, // Use parent URL if available
-          referrer: parentReferrer || document.referrer || undefined, // Use parent referrer if available
-          ...locationData,
-          ...deviceInfo
-        }
+        visitor_metadata: visitorMetadata
       };
 
 
