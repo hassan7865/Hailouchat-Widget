@@ -132,8 +132,8 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
       sendMessage(visitorJoinedMessage);
       setHasVisitorJoined(true);
       
-      // Add a small delay to ensure proper message ordering
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // Add a longer delay for the first message to avoid debounce issues
+      await new Promise(resolve => setTimeout(resolve, 200));
     }
 
     const messageId = `${Date.now()}-${Math.random()}`;
@@ -144,7 +144,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
     };
 
     // Don't add to UI immediately - let WebSocket echo handle it
-    // This prevents duplicate messages on mobile
+    // This prevents duplicate messages and maintains proper seen status
     sendMessage(message);
   };
 
