@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, type JSX } from 'react';
-import { Bot, User, Clock, Check } from 'lucide-react';
+import { Bot, User, Clock, Check, FileText } from 'lucide-react';
 import type { Message } from '../../types/chat';
 
 interface MessageListProps {
@@ -43,7 +43,22 @@ export const MessageList: React.FC<MessageListProps> = ({ messages, isTyping, is
                 ? 'bg-yellow-100 text-yellow-800 border border-yellow-200'
                 : 'bg-gray-200 text-gray-800 rounded-bl-md'
           }`}>
-            <p className={`${isMobile ? 'text-base' : 'text-xs'} leading-relaxed`}>{msg.message}</p>
+            {msg.type === 'attachment' && msg.attachment ? (
+              <div className="flex items-center gap-2">
+                <FileText className={`${isMobile ? 'w-5 h-5' : 'w-4 h-4'} ${isVisitor ? 'text-white' : 'text-gray-600'}`} />
+                <a
+                  href={msg.attachment.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`${isMobile ? 'text-base' : 'text-xs'} ${isVisitor ? 'text-white underline' : 'text-blue-600 hover:underline'} truncate max-w-48`}
+                  title={msg.attachment.file_name}
+                >
+                  {msg.attachment.file_name}
+                </a>
+              </div>
+            ) : (
+              <p className={`${isMobile ? 'text-base' : 'text-xs'} leading-relaxed`}>{msg.message}</p>
+            )}
             {(isVisitor || (!isVisitor && !isSystem)) && (
               <div className="flex items-center justify-end mt-0.5">
                 {msg.status === 'read' ? (

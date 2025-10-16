@@ -5,6 +5,13 @@ export interface Message {
   message: string;
   timestamp: string;
   status?: 'delivered' | 'read';
+  type?: 'text' | 'attachment';
+  attachment?: {
+    file_name: string;
+    url: string;
+    mime_type?: string;
+    size?: number;
+  };
 }
 
 export interface VisitorMetadata {
@@ -35,13 +42,20 @@ export interface ChatInitiateResponse {
 }
 
 export interface WebSocketMessage {
-  type: 'chat_message' | 'typing_indicator' | 'chat_connected' | 'message_seen';
+  type: 'chat_message' | 'attachment_message' | 'typing_indicator' | 'chat_connected' | 'message_seen';
   sender_type?: 'visitor' | 'client_agent' | 'system';
   sender_id?: string;
   message?: string;
   timestamp?: string;
   is_typing?: boolean;
   message_id?: string;
+  attachment?: {
+    file_name: string;
+    url: string;
+    mime_type?: string;
+    size?: number;
+    s3_key?: string;
+  };
 }
 
 export interface OutgoingMessage {

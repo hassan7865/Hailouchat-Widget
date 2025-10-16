@@ -15,6 +15,7 @@ interface ChatWindowProps {
   onStartChat: () => void;
   onSendMessage: (message: string) => void | Promise<void>;
   onTypingChange: (isTyping: boolean) => void;
+  onFileUpload?: (file: File) => Promise<void>;
   onClose: () => void;
   isMobile?: boolean;
 }
@@ -28,6 +29,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   onStartChat,
   onSendMessage,
   onTypingChange,
+  onFileUpload,
   onClose,
   isMobile = false,
 }) => {
@@ -84,6 +86,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         <MessageInput
           onSendMessage={onSendMessage}
           onTypingChange={onTypingChange}
+          onFileUpload={onFileUpload}
           connectionStatus={connectionStatus}
           isMobile={isMobile}
         />

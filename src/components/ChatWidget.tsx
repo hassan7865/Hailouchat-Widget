@@ -32,7 +32,8 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
     resetChat,
     markAsRead,
     sendTypingIndicator,
-    sendMessageSeen
+    sendMessageSeen,
+    uploadAttachment
   } = useChat({
     clientId,
     apiBase,
@@ -219,6 +220,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
             onStartChat={handleStartChat}
             onSendMessage={handleSendMessage}
             onTypingChange={handleTypingChange}
+            onFileUpload={(file) => uploadAttachment(file, apiBase)}
             onClose={handleCloseChat}
             isMobile={isMobile}
           />

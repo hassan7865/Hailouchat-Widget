@@ -104,7 +104,7 @@ export const useChat = ({ clientId, apiBase }: UseChatProps) => {
   }, [clientId, apiBase, addMessage]);
 
   const handleWebSocketMessage = useCallback((data: any) => {
-    if (data.type === 'chat_message' && data.message) {
+    if (data.type === 'chat_message' || data.type === 'attachment_message') {
       const currentTime = Date.now();
       
       if (currentTime - lastMessageTimeRef.current < 100) {
@@ -120,13 +120,16 @@ export const useChat = ({ clientId, apiBase }: UseChatProps) => {
       lastMessageTimeRef.current = currentTime;
       messageIdsRef.current.add(messageId);
       
+      const isAttachment = data.type === 'attachment_message' || data.attachment;
       const newMsg: Message = {
         id: messageId,
         sender_type: data.sender_type || 'client_agent',
         sender_id: data.sender_id,
-        message: data.message,
+        message: data.message || data.attachment?.file_name || '',
         timestamp: data.timestamp || new Date().toISOString(),
-        status: 'delivered' // Mark as delivered when received
+        status: 'delivered', // Mark as delivered when received
+        type: isAttachment ? 'attachment' : 'text',
+        attachment: data.attachment
       };
       
       addMessage(newMsg);
@@ -177,6 +180,96 @@ export const useChat = ({ clientId, apiBase }: UseChatProps) => {
     }
   }, [sessionId, visitorId]);
 
+  const uploadAttachment = useCallback(async (file: File, apiBase: string): Promise<void> => {
+    if (!visitorId || !sessionId) {
+      throw new Error('No active session');
+    }
+
+    try {
+      // 1. Get presigned URL
+      const presignResponse = await fetch(
+        `${apiBase}/chat/${sessionId}/visitor/${visitorId}/attachments/presign`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            file_name: file.name,
+            mime_type: file.type || 'application/octet-stream',
+            size: file.size
+          })
+        }
+      );
+
+      if (!presignResponse.ok) {
+        throw new Error('Failed to get upload URL');
+      }
+
+      const presignData = await presignResponse.json();
+      if (!presignData.success) {
+        throw new Error('Failed to get upload URL');
+      }
+
+      const { upload_url, headers, s3_key, public_url } = presignData;
+
+      // 2. Upload to S3 using presigned URL
+      if (upload_url) {
+        // Start with Content-Type from file, then merge backend headers (as in fe_flow_test.py)
+        const uploadHeaders: Record<string, string> = {
+          'Content-Type': file.type || 'application/octet-stream'
+        };
+        
+        // Merge additional headers from backend response
+        if (headers) {
+          Object.assign(uploadHeaders, headers);
+        }
+
+        const uploadResponse = await fetch(upload_url, {
+          method: 'PUT',
+          body: file,
+          headers: uploadHeaders
+        });
+
+        if (!uploadResponse.ok) {
+          throw new Error(`Failed to upload file: ${uploadResponse.status}`);
+        }
+      } else if (public_url) {
+        // For public bucket mode, upload directly to public URL
+        const uploadResponse = await fetch(public_url, {
+          method: 'PUT',
+          body: file,
+          headers: {
+            'Content-Type': file.type || 'application/octet-stream'
+          }
+        });
+
+        if (!uploadResponse.ok) {
+          throw new Error('Failed to upload file to public bucket');
+        }
+      } else {
+        throw new Error('No upload URL provided');
+      }
+
+      // 3. Commit attachment
+      await fetch(
+        `${apiBase}/chat/${sessionId}/visitor/${visitorId}/attachments/upload`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            file_name: file.name,
+            mime_type: file.type || 'application/octet-stream',
+            size: file.size,
+            s3_key: s3_key,
+            caption: ''
+          })
+        }
+      );
+    } catch (error) {
+      console.error('Error uploading attachment:', error);
+      throw error;
+    }
+  }, [visitorId, sessionId]);
+
   return {
     messages,
     visitorId,
@@ -189,6 +282,7 @@ export const useChat = ({ clientId, apiBase }: UseChatProps) => {
     markAsRead,
     addMessage,
     sendTypingIndicator,
-    sendMessageSeen
+    sendMessageSeen,
+    uploadAttachment
   };
 };
