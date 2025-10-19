@@ -60,9 +60,4 @@ html, body {
     box-sizing: border-box !important;
   }
   
-  /* Prevent any element from causing horizontal overflow */
-  * {
-    max-width: 100%;
-    box-sizing: border-box;
-  }
 }

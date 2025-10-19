@@ -12,11 +12,14 @@ interface ChatWindowProps {
   messages: Message[];
   isTyping: boolean;
   connectionStatus: ConnectionStatus;
+  visitorId?: string;
   onStartChat: () => void;
   onSendMessage: (message: string) => void | Promise<void>;
   onTypingChange: (isTyping: boolean) => void;
   onFileUpload?: (file: File) => Promise<void>;
   onClose: () => void;
+  onEndChat?: () => void;
+  onOpenContactModal?: () => void;
   isMobile?: boolean;
 }
 
@@ -26,11 +29,14 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   messages,
   isTyping,
   connectionStatus,
+  visitorId,
   onStartChat,
   onSendMessage,
   onTypingChange,
   onFileUpload,
   onClose,
+  onEndChat,
+  onOpenContactModal,
   isMobile = false,
 }) => {
   // Auto-start chat when window opens if not already started
@@ -48,7 +54,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   }, [connectionStatus, chatStarted, onClose]);
 
   return (
-    <div className={`w-full h-full bg-white ${isMobile ? 'rounded-none' : 'rounded-b-2xl'} flex flex-col overflow-hidden transition-all duration-300 pointer-events-auto`}>
+    <div className={`w-full h-full bg-white ${isMobile ? 'rounded-none' : 'rounded-b-2xl'} flex flex-col transition-all duration-300 pointer-events-auto`}>
       
       {/* Header Section - Fixed */}
       <div className="flex-shrink-0">
@@ -77,18 +83,21 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         <MessageList
           messages={messages}
           isTyping={isTyping}
+          visitorId={visitorId}
           isMobile={isMobile}
+          onOpenContactModal={onOpenContactModal}
         />
       </div>
 
       {/* Input Section - Fixed at Bottom */}
-      <div className="flex-shrink-0">
+      <div className="flex-shrink-0" style={{ position: 'relative', zIndex: 10 }}>
         <MessageInput
           onSendMessage={onSendMessage}
           onTypingChange={onTypingChange}
           onFileUpload={onFileUpload}
           connectionStatus={connectionStatus}
           isMobile={isMobile}
+          onEndChat={onEndChat}
         />
       </div>
     </div>

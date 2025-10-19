@@ -5,7 +5,7 @@
 
   const script = document.currentScript;
   const clientId = script.getAttribute("data-client-id");
-  const baseUrl = "https://widget.hailouchat.com";
+  const baseUrl = "http://localhost:5173";
 
   if (!clientId) {
     console.error("HailouChat: data-client-id attribute is required");

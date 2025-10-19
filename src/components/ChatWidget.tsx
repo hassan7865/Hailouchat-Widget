@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ChatButton } from './chat/ChatButton';
 import { ChatWindow } from './chat/ChatWindow';
+import { ContactDetailsModal } from './ContactDetailsModal';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { useChat } from '../hooks/useChat';
 import type { ChatWidgetProps, ConnectionStatus, OutgoingMessage } from '../types/chat';
@@ -17,6 +18,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('disconnected');
   const [hasNewMessage, setHasNewMessage] = useState<boolean>(false);
   const [hasVisitorJoined, setHasVisitorJoined] = useState<boolean>(false);
+  const [showContactModal, setShowContactModal] = useState<boolean>(false);
   
   const typingTimeoutRef = useRef<number | null>(null);
   const lastMessageCountRef = useRef<number>(0);
@@ -168,6 +170,11 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
     }
   };
 
+
+  const handleEndChat = (): void => {
+    console.log('End chat clicked')
+  };
+
   const handleToggleChat = (): void => {
     if (!isOpen) {
       setIsOpen(true);
@@ -201,7 +208,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
   }, [disconnect]);
 
   return (
-    <div className={`${isMobile ? 'w-full h-full' : 'w-full h-full'} relative ${isMobile ? 'mobile-chat-widget' : ''}`}>
+    <div className={`${isMobile ? 'w-full h-full' : 'w-full h-full'} relative ${isMobile ? 'mobile-chat-widget' : ''} border border-gray-200`}>
       {!isOpen ? (
         <div className={`absolute bottom-4 right-4 transition-all duration-300 ${hasNewMessage ? 'animate-bounce' : ''}`}>
           <ChatButton
@@ -217,15 +224,30 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
             messages={messages}
             isTyping={isTyping}
             connectionStatus={connectionStatus}
+            visitorId={visitorId || undefined}
             onStartChat={handleStartChat}
             onSendMessage={handleSendMessage}
             onTypingChange={handleTypingChange}
             onFileUpload={(file) => uploadAttachment(file, apiBase)}
             onClose={handleCloseChat}
+            onEndChat={handleEndChat}
+            onOpenContactModal={() => setShowContactModal(true)}
             isMobile={isMobile}
           />
         </div>
       )}
+
+      {/* Contact Details Modal */}
+      <ContactDetailsModal
+        isOpen={showContactModal}
+        onClose={() => setShowContactModal(false)}
+        onSave={(name, email) => {
+          console.log('Saving contact details:', { name, email });
+          setShowContactModal(false);
+        }}
+        initialName=""
+        initialEmail=""
+      />
     </div>
   );
 };
