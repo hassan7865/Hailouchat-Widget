@@ -4,24 +4,34 @@ interface ContactDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (name: string, email: string) => void;
-  initialName?: string;
-  initialEmail?: string;
+  fetchVisitorDetails?: () => Promise<{ firstName: string; email: string } | null>;
 }
 
 export const ContactDetailsModal: React.FC<ContactDetailsModalProps> = ({
   isOpen,
   onClose,
   onSave,
-  initialName = '',
-  initialEmail = ''
+  fetchVisitorDetails
 }) => {
-  const [name, setName] = useState(initialName);
-  const [email, setEmail] = useState(initialEmail);
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    setName(initialName);
-    setEmail(initialEmail);
-  }, [initialName, initialEmail]);
+    const loadVisitorDetails = async () => {
+      if (isOpen && fetchVisitorDetails) {
+        setLoading(true);
+        const details = await fetchVisitorDetails();
+        if (details) {
+          setName(details.firstName);
+          setEmail(details.email);
+        }
+        setLoading(false);
+      }
+    };
+    
+    loadVisitorDetails();
+  }, [isOpen, fetchVisitorDetails]);
 
   useEffect(() => {
     if (isOpen) {
@@ -74,7 +84,8 @@ export const ContactDetailsModal: React.FC<ContactDetailsModalProps> = ({
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-[#17494d] focus:border-transparent"
-              placeholder="Enter your name"
+              placeholder={loading ? "Loading..." : "Enter your name"}
+              disabled={loading}
             />
           </div>
 
@@ -88,7 +99,8 @@ export const ContactDetailsModal: React.FC<ContactDetailsModalProps> = ({
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-[#17494d] focus:border-transparent"
-              placeholder="Enter your email"
+              placeholder={loading ? "Loading..." : "Enter your email"}
+              disabled={loading}
             />
           </div>
         </div>

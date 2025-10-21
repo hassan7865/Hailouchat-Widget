@@ -16,6 +16,7 @@ export const useChat = ({ clientId, apiBase }: UseChatProps) => {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [isTyping, setIsTyping] = useState<boolean>(false);
+  const [ipAddress, setIpAddress] = useState<string | null>(null);
   
   const messageIdsRef = useRef<Set<string>>(new Set());
   const lastMessageTimeRef = useRef<number>(0);
@@ -83,6 +84,7 @@ export const useChat = ({ clientId, apiBase }: UseChatProps) => {
       
       setVisitorId(visitor_id);
       setSessionId(session_id);
+      setIpAddress(ipAddress || null);
       
       setMessages([]);
       messageIdsRef.current.clear();
@@ -125,11 +127,14 @@ export const useChat = ({ clientId, apiBase }: UseChatProps) => {
         id: messageId,
         sender_type: data.sender_type || 'client_agent',
         sender_id: data.sender_id,
+        sender_name: data.sender_name,
         message: data.message || data.attachment?.file_name || '',
         timestamp: data.timestamp || new Date().toISOString(),
         status: 'delivered', // Mark as delivered when received
         type: isAttachment ? 'attachment' : 'text',
-        attachment: data.attachment
+        attachment: data.attachment,
+        system_message_type: data.system_message_type,
+        hide_from_visitor: data.hide_from_visitor
       };
       
       addMessage(newMsg);
@@ -147,10 +152,34 @@ export const useChat = ({ clientId, apiBase }: UseChatProps) => {
     }
   }, [addMessage]);
 
+  const fetchVisitorDetails = useCallback(async () => {
+    if (!ipAddress) return null;
+    
+    try {
+      const response = await fetch(
+        `${apiBase}/chat/visitor-details?ip_address=${ipAddress}&client_key=${clientId}`
+      );
+      
+      if (!response.ok) {
+        return null;
+      }
+      
+      const data = await response.json();
+      return {
+        firstName: data.first_name || '',
+        email: data.email || ''
+      };
+    } catch (error) {
+      console.error('Error fetching visitor details:', error);
+      return null;
+    }
+  }, [apiBase, clientId, ipAddress]);
+
   const resetChat = useCallback(() => {
     setMessages([]);
     setVisitorId(null);
     setSessionId(null);
+    setIpAddress(null);
     setIsTyping(false);
     messageIdsRef.current.clear();
     seenMessageIdsRef.current.clear();
@@ -274,6 +303,7 @@ export const useChat = ({ clientId, apiBase }: UseChatProps) => {
     messages,
     visitorId,
     sessionId,
+    ipAddress,
     loading,
     isTyping,
     startChat,
@@ -283,6 +313,7 @@ export const useChat = ({ clientId, apiBase }: UseChatProps) => {
     addMessage,
     sendTypingIndicator,
     sendMessageSeen,
-    uploadAttachment
+    uploadAttachment,
+    fetchVisitorDetails
   };
 };

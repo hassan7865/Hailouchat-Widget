@@ -17,7 +17,6 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
   const [chatStarted, setChatStarted] = useState<boolean>(false);
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('disconnected');
   const [hasNewMessage, setHasNewMessage] = useState<boolean>(false);
-  const [hasVisitorJoined, setHasVisitorJoined] = useState<boolean>(false);
   const [showContactModal, setShowContactModal] = useState<boolean>(false);
   
   const typingTimeoutRef = useRef<number | null>(null);
@@ -27,6 +26,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
   const {
     messages,
     visitorId,
+    ipAddress,
     loading,
     isTyping,
     startChat,
@@ -35,7 +35,8 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
     markAsRead,
     sendTypingIndicator,
     sendMessageSeen,
-    uploadAttachment
+    uploadAttachment,
+    fetchVisitorDetails
   } = useChat({
     clientId,
     apiBase,
@@ -88,7 +89,6 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
     if (connectionStatus === 'disconnected' && chatStarted) {
       setIsOpen(false); // Minimize the chat
       setChatStarted(false);
-      setHasVisitorJoined(false); // Reset visitor joined state
       chatStartAttemptedRef.current = false; // Reset chat start flag
       resetChat(); // Reset all chat state like a fresh start
     }
@@ -107,7 +107,6 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
     try {
       const { visitorId: newVisitorId, sessionId: newSessionId } = await startChat();
       setChatStarted(true);
-      setHasVisitorJoined(false); // Reset visitor joined state for new session
       
       const wsUrl = `${wsBase}/ws/chat/${newSessionId}/visitor/${newVisitorId}`;
       connect(wsUrl);
@@ -119,25 +118,6 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
 
   const handleSendMessage = async (messageText: string): Promise<void> => {
     if (!messageText.trim() || connectionStatus !== 'connected') return;
-
-    // Check if this is the first message from visitor in this session
-    const hasVisitorMessages = messages.some(msg => msg.sender_type === 'visitor');
-
-    // Only send visitor joined message if no visitor messages exist AND we haven't already sent it
-    if (!hasVisitorMessages && !hasVisitorJoined) {
-      // Send visitor joined system message first
-      const visitorJoinedMessage: OutgoingMessage = {
-        type: 'chat_message',
-        message: `Visitor ${visitorId?.slice(0, 8)} has joined the chat`,
-        sender_type: 'system',
-        message_id: `${Date.now()}-visitor-joined`
-      };
-      sendMessage(visitorJoinedMessage);
-      setHasVisitorJoined(true);
-      
-      // Add a longer delay for the first message to avoid debounce issues
-      await new Promise(resolve => setTimeout(resolve, 200));
-    }
 
     const messageId = `${Date.now()}-${Math.random()}`;
     const message: OutgoingMessage = {
@@ -172,7 +152,16 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
 
 
   const handleEndChat = (): void => {
-    console.log('End chat clicked')
+    // Send close_session message to backend (visitor wants to leave)
+    if (connectionStatus === 'connected') {
+      sendMessage({
+        type: 'close_session',
+        timestamp: new Date().toISOString()
+      });
+    }
+    
+    // Keep connection alive, keep the window open
+    // Don't minimize or close the widget - visitor can continue chatting
   };
 
   const handleToggleChat = (): void => {
@@ -241,12 +230,30 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
       <ContactDetailsModal
         isOpen={showContactModal}
         onClose={() => setShowContactModal(false)}
-        onSave={(name, email) => {
-          console.log('Saving contact details:', { name, email });
+        onSave={async (name, email) => {
+          try {
+            const response = await fetch(`${apiBase}/chat/visitor-details/widget`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                client_key: clientId,
+                ip_address: ipAddress,
+                first_name: name,
+                email: email
+              })
+            });
+            
+            if (response.ok) {
+              
+            }
+          } catch (error) {
+            console.error('Error saving contact details:', error);
+          }
           setShowContactModal(false);
         }}
-        initialName=""
-        initialEmail=""
+        fetchVisitorDetails={fetchVisitorDetails}
       />
     </div>
   );

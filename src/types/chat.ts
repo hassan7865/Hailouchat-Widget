@@ -2,6 +2,7 @@ export interface Message {
   id: string;
   sender_type: 'visitor' | 'client_agent' | 'system';
   sender_id?: string;
+  sender_name?: string | null;
   message: string;
   timestamp: string;
   status?: 'delivered' | 'read';
@@ -12,6 +13,8 @@ export interface Message {
     mime_type?: string;
     size?: number;
   };
+  system_message_type?: string;
+  hide_from_visitor?: boolean;
 }
 
 export interface VisitorMetadata {
@@ -45,6 +48,7 @@ export interface WebSocketMessage {
   type: 'chat_message' | 'attachment_message' | 'typing_indicator' | 'chat_connected' | 'message_seen';
   sender_type?: 'visitor' | 'client_agent' | 'system';
   sender_id?: string;
+  sender_name?: string | null;
   message?: string;
   timestamp?: string;
   is_typing?: boolean;
@@ -56,14 +60,17 @@ export interface WebSocketMessage {
     size?: number;
     s3_key?: string;
   };
+  system_message_type?: string;
+  hide_from_visitor?: boolean;
 }
 
 export interface OutgoingMessage {
-  type: 'chat_message' | 'typing_indicator' | 'message_seen';
+  type: 'chat_message' | 'typing_indicator' | 'message_seen' | 'close_session';
   message?: string;
   is_typing?: boolean;
   message_id?: string;
   sender_type?: 'visitor' | 'client_agent' | 'system';
+  timestamp?: string;
 }
 
 export type ConnectionStatus = 'connected' | 'disconnected' | 'error' | 'connecting';

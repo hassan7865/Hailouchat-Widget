@@ -29,7 +29,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   messages,
   isTyping,
   connectionStatus,
-  visitorId,
+  visitorId, // Keep for potential future use
   onStartChat,
   onSendMessage,
   onTypingChange,
@@ -83,9 +83,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         <MessageList
           messages={messages}
           isTyping={isTyping}
-          visitorId={visitorId}
           isMobile={isMobile}
-          onOpenContactModal={onOpenContactModal}
         />
       </div>
 
@@ -98,6 +96,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
           connectionStatus={connectionStatus}
           isMobile={isMobile}
           onEndChat={onEndChat}
+          onEditContactDetails={onOpenContactModal}
         />
       </div>
     </div>

@@ -5,12 +5,10 @@ import type { Message } from '../../types/chat';
 interface MessageListProps {
   messages: Message[];
   isTyping: boolean;
-  visitorId?: string;
   isMobile?: boolean;
-  onOpenContactModal?: () => void;
 }
 
-export const MessageList: React.FC<MessageListProps> = ({ messages, isTyping, visitorId, isMobile = false, onOpenContactModal }) => {
+export const MessageList: React.FC<MessageListProps> = ({ messages, isTyping, isMobile = false }) => {
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   const scrollToBottom = (): void => {
@@ -21,72 +19,17 @@ export const MessageList: React.FC<MessageListProps> = ({ messages, isTyping, vi
     scrollToBottom();
   }, [messages, isTyping]);
 
-  // Generate local system messages
-  const generateLocalSystemMessages = (): Message[] => {
-    const localMessages: Message[] = [];
-    
-    if (messages.length === 0) return localMessages;
-    
-    // Check if this is the first message in the conversation
-    const hasFirstMessage = messages.length > 0;
-    const hasVisitorMessage = messages.some(msg => msg.sender_type === 'visitor');
-    
-    // Get the timestamp of the first message to place system messages appropriately
-    const firstMessage = messages[0];
-    const firstMessageTime = new Date(firstMessage.timestamp).getTime();
-    
-    // Add "chat started" message if this is the first message
-    if (hasFirstMessage) {
-      localMessages.push({
-        id: 'local-chat-started',
-        sender_type: 'system',
-        message: 'Chat started',
-        timestamp: new Date(firstMessageTime - 1000).toISOString(), // 1 second before first message
-        type: 'text'
-      });
-    }
-    
-    // Add "please update your info" message if visitor has sent their first message
-    if (hasVisitorMessage) {
-      // Find the first visitor message timestamp
-      const firstVisitorMessage = messages.find(msg => msg.sender_type === 'visitor');
-      if (firstVisitorMessage) {
-        const visitorMessageTime = new Date(firstVisitorMessage.timestamp).getTime();
-        localMessages.push({
-          id: 'local-update-info',
-          sender_type: 'system',
-          message: 'please update your info',
-          timestamp: new Date(visitorMessageTime + 1000).toISOString(), // 1 second after visitor's first message
-          type: 'text'
-        });
-      }
-    }
-    
-    return localMessages;
-  };
-
   const renderMessage = (msg: Message): JSX.Element => {
     const isVisitor = msg.sender_type === 'visitor';
     const isSystem = msg.sender_type === 'system';
     
     // Special rendering for system messages
     if (isSystem) {
-      const isUpdateInfoMessage = msg.id === 'local-update-info';
-      
       return (
         <div key={msg.id} className="flex justify-center mb-2 px-3">
-          {isUpdateInfoMessage ? (
-            <button
-              onClick={onOpenContactModal}
-              className="text-sm text-[#17494d] text-center underline hover:text-[#0f3a3d] cursor-pointer transition-colors"
-            >
-              {msg.message}
-            </button>
-          ) : (
-            <p className="text-sm text-gray-500 text-center">
-              {msg.message}
-            </p>
-          )}
+          <p className="text-sm text-gray-500 text-center">
+            {msg.message}
+          </p>
         </div>
       );
     }
@@ -100,41 +43,50 @@ export const MessageList: React.FC<MessageListProps> = ({ messages, isTyping, vi
             </div>
           )}
           
-          <div className={`${isMobile ? 'px-4 py-3' : 'px-3 py-2'} rounded-2xl ${
-            isVisitor 
-              ? 'bg-[#1E464A] text-white rounded-br-md' 
-              : 'bg-gray-200 text-gray-800 rounded-bl-md'
-          }`}>
-            {msg.type === 'attachment' && msg.attachment ? (
-              <div className="flex items-center gap-2">
-                <FileText className={`${isMobile ? 'w-5 h-5' : 'w-4 h-4'} ${isVisitor ? 'text-white' : 'text-gray-600'}`} />
-                <a
-                  href={msg.attachment.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={`${isMobile ? 'text-base' : 'text-xs'} ${isVisitor ? 'text-white underline' : 'text-blue-600 hover:underline'} truncate max-w-48`}
-                  title={msg.attachment.file_name}
-                >
-                  {msg.attachment.file_name}
-                </a>
-              </div>
-            ) : (
-              <p className={`${isMobile ? 'text-base' : 'text-xs'} leading-relaxed`}>{msg.message}</p>
+          <div className="flex flex-col gap-0.5">
+            {/* Show agent name for agent messages */}
+            {!isVisitor && msg.sender_name && (
+              <span className={`${isMobile ? 'text-xs' : 'text-[10px]'} text-gray-600 font-medium`}>
+                {msg.sender_name}
+              </span>
             )}
-            {isVisitor && (
-              <div className="flex items-center justify-end mt-0.5">
-                {msg.status === 'read' ? (
-                  <div className="flex items-center gap-0.5">
+            
+            <div className={`${isMobile ? 'px-4 py-3' : 'px-3 py-2'} rounded-2xl ${
+              isVisitor 
+                ? 'bg-[#1E464A] text-white rounded-br-md' 
+                : 'bg-gray-200 text-gray-800 rounded-bl-md'
+            }`}>
+              {msg.type === 'attachment' && msg.attachment ? (
+                <div className="flex items-center gap-2">
+                  <FileText className={`${isMobile ? 'w-5 h-5' : 'w-4 h-4'} ${isVisitor ? 'text-white' : 'text-gray-600'}`} />
+                  <a
+                    href={msg.attachment.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`${isMobile ? 'text-base' : 'text-xs'} ${isVisitor ? 'text-white underline' : 'text-blue-600 hover:underline'} truncate max-w-48`}
+                    title={msg.attachment.file_name}
+                  >
+                    {msg.attachment.file_name}
+                  </a>
+                </div>
+              ) : (
+                <p className={`${isMobile ? 'text-base' : 'text-xs'} leading-relaxed`}>{msg.message}</p>
+              )}
+              {isVisitor && (
+                <div className="flex items-center justify-end mt-0.5">
+                  {msg.status === 'read' ? (
+                    <div className="flex items-center gap-0.5">
+                      <Check className={`${isMobile ? 'w-3 h-3' : 'w-2.5 h-2.5'} text-white`} />
+                      <Check className={`${isMobile ? 'w-3 h-3' : 'w-2.5 h-2.5'} text-white`} />
+                    </div>
+                  ) : msg.status === 'delivered' ? (
                     <Check className={`${isMobile ? 'w-3 h-3' : 'w-2.5 h-2.5'} text-white`} />
-                    <Check className={`${isMobile ? 'w-3 h-3' : 'w-2.5 h-2.5'} text-white`} />
-                  </div>
-                ) : msg.status === 'delivered' ? (
-                  <Check className={`${isMobile ? 'w-3 h-3' : 'w-2.5 h-2.5'} text-white`} />
-                ) : (
-                  <div className={`${isMobile ? 'w-3 h-3' : 'w-2.5 h-2.5'} border border-white rounded-full`}></div>
-                )}
-              </div>
-            )}
+                  ) : (
+                    <div className={`${isMobile ? 'w-3 h-3' : 'w-2.5 h-2.5'} border border-white rounded-full`}></div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
           
           {isVisitor && (
@@ -147,28 +99,26 @@ export const MessageList: React.FC<MessageListProps> = ({ messages, isTyping, vi
     );
   };
 
-  // Filter messages: show system messages but exclude messages where sender_id equals visitor_id
-  const filteredMessages = messages.filter(msg => {
-    // For system messages, exclude if sender_id equals visitor_id
-    if (msg.sender_type === 'system') {
-      if (visitorId && msg.sender_id === visitorId) {
-        return false;
+  // Process messages: replace visitor-specific messages with "Chat ended"
+  const visibleMessages = messages.map(msg => {
+    // For system messages marked to hide from visitor, replace with "Chat ended"
+    if (msg.sender_type === 'system' && msg.hide_from_visitor === true) {
+      // Check if it's a visitor left/ended message
+      if (msg.system_message_type === 'visitor_left' || 
+          msg.system_message_type === 'visitor_ended_chat') {
+        return {
+          ...msg,
+          message: 'Chat ended',
+          hide_from_visitor: false // Show the modified message
+        };
       }
-      return true;
+      // For visitor_joined, don't show at all
+      if (msg.system_message_type === 'visitor_joined') {
+        return null;
+      }
     }
-    return true;
-  });
-
-  
-  const localSystemMessages = generateLocalSystemMessages();
-  
-  // Combine and sort all messages by timestamp
-  const allMessages = [...filteredMessages, ...localSystemMessages];
-  const visibleMessages = allMessages.sort((a, b) => {
-    const timeA = new Date(a.timestamp).getTime();
-    const timeB = new Date(b.timestamp).getTime();
-    return timeA - timeB;
-  });
+    return msg;
+  }).filter((msg): msg is Message => msg !== null); // Remove null entries
 
   return (
     <div className={`h-full overflow-y-auto overflow-x-hidden bg-white ${isMobile ? 'pb-2' : ''}`}>

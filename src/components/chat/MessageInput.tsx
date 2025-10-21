@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Paperclip, Clipboard, MoreHorizontal, FileText, X } from 'lucide-react';
 import type { ConnectionStatus } from '../../types/chat';
 import { Tooltip } from '../Tooltip';
-import { ContactDetailsModal } from '../ContactDetailsModal';
 import { EndChatModal } from '../EndChatModal';
 
 
@@ -13,6 +12,7 @@ interface MessageInputProps {
   connectionStatus: ConnectionStatus;
   isMobile?: boolean;
   onEndChat?: () => void;
+  onEditContactDetails?: () => void;
 }
 
 export const MessageInput: React.FC<MessageInputProps> = ({ 
@@ -22,13 +22,13 @@ export const MessageInput: React.FC<MessageInputProps> = ({
   connectionStatus,
   isMobile = false,
   onEndChat,
+  onEditContactDetails,
 }) => {
   const [newMessage, setNewMessage] = useState<string>('');
   const [isTyping, setIsTyping] = useState<boolean>(false);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [uploadingFiles, setUploadingFiles] = useState<Set<string>>(new Set());
   const [showMoreMenu, setShowMoreMenu] = useState<boolean>(false);
-  const [showContactModal, setShowContactModal] = useState<boolean>(false);
   const [showEndChatModal, setShowEndChatModal] = useState<boolean>(false);
   const typingTimeoutRef = React.useRef<number | null>(null);
   const moreMenuRef = useRef<HTMLDivElement>(null);
@@ -119,13 +119,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
 
   const handleEditContactDetails = () => {
     setShowMoreMenu(false);
-    setShowContactModal(true);
-  };
-
-  const handleSaveContactDetails = (name: string, email: string) => {
-    console.log('Saving contact details:', { name, email });
-    // Here you can add logic to save the contact details
-    // For now, just logging them
+    onEditContactDetails?.();
   };
 
   const handleEndChat = () => {
@@ -275,14 +269,6 @@ export const MessageInput: React.FC<MessageInputProps> = ({
         </div>
       )}
 
-      {/* Contact Details Modal */}
-      <ContactDetailsModal
-        isOpen={showContactModal}
-        onClose={() => setShowContactModal(false)}
-        onSave={handleSaveContactDetails}
-        initialName="Test"
-        initialEmail=""
-      />
 
       {/* End Chat Confirmation Modal */}
       <EndChatModal
