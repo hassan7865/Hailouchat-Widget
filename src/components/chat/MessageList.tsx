@@ -1,15 +1,37 @@
-import React, { useRef, useEffect, type JSX } from 'react';
-import { Bot, User, Check, FileText } from 'lucide-react';
+import React, { useRef, useEffect, useState, type JSX } from 'react';
+import { Bot, User, Check, FileText, ThumbsUp, ThumbsDown } from 'lucide-react';
 import type { Message } from '../../types/chat';
 
 interface MessageListProps {
   messages: Message[];
   isTyping: boolean;
   isMobile?: boolean;
+  sessionId?: string;
+  clientId?: string;
+  apiBase?: string;
+  onShowRatingFormChange?: (show: boolean) => void;
 }
 
-export const MessageList: React.FC<MessageListProps> = ({ messages, isTyping, isMobile = false }) => {
+export const MessageList: React.FC<MessageListProps> = ({ 
+  messages, 
+  isTyping, 
+  isMobile = false, 
+  sessionId, 
+  clientId, 
+  apiBase,
+  onShowRatingFormChange
+}) => {
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const [ratingSubmitted, setRatingSubmitted] = useState(false);
+  const [selectedRating, setSelectedRating] = useState<'thumbs_up' | 'thumbs_down' | null>(null);
+  const [ratingComment, setRatingComment] = useState('');
+  const [isSubmittingRating, setIsSubmittingRating] = useState(false);
+  const [showRatingForm, setShowRatingForm] = useState(false);
+
+  // Notify parent when showRatingForm changes
+  useEffect(() => {
+    onShowRatingFormChange?.(showRatingForm);
+  }, [showRatingForm, onShowRatingFormChange]);
 
   const scrollToBottom = (): void => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -18,6 +40,42 @@ export const MessageList: React.FC<MessageListProps> = ({ messages, isTyping, is
   useEffect(() => {
     scrollToBottom();
   }, [messages, isTyping]);
+
+  // Check if there's a rating request message and it hasn't been submitted yet
+  const hasRatingRequest = messages.some(msg => 
+    msg.sender_type === 'system' && msg.system_message_type === 'rating_request'
+  ) && !ratingSubmitted;
+
+  const handleSubmitRating = async () => {
+    if (!selectedRating || !sessionId || !clientId || !apiBase) return;
+    
+    setIsSubmittingRating(true);
+    try {
+      const response = await fetch(`${apiBase}/chat/session-rating`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          client_key: clientId,
+          session_id: sessionId,
+          rating: selectedRating,
+          note: ratingComment.trim() || null
+        })
+      });
+      
+      if (response.ok) {
+        setRatingSubmitted(true);
+        setShowRatingForm(false); // Close the form
+        setSelectedRating(null);
+        setRatingComment('');
+      }
+    } catch (error) {
+      console.error('Error submitting rating:', error);
+    } finally {
+      setIsSubmittingRating(false);
+    }
+  };
 
   const renderMessage = (msg: Message): JSX.Element => {
     const isVisitor = msg.sender_type === 'visitor';
@@ -101,6 +159,22 @@ export const MessageList: React.FC<MessageListProps> = ({ messages, isTyping, is
 
   // Process messages: replace visitor-specific messages with "Chat ended"
   const visibleMessages = messages.map(msg => {
+    // Hide rating request messages from visitor since we have header buttons
+    if (msg.sender_type === 'system' && msg.system_message_type === 'rating_request') {
+      return null; // Don't show rating request messages
+    }
+    
+    // Transform rating confirmation messages to show "Chat rated Good/Bad"
+    if (msg.sender_type === 'system' && 
+        (msg.system_message_type === 'rating_confirmation' || 
+         msg.message.includes('has rated 👍') || msg.message.includes('has rated 👎'))) {
+      const isGood = msg.message.includes('👍');
+      return {
+        ...msg,
+        message: `Chat rated ${isGood ? 'Good' : 'Bad'}`
+      };
+    }
+    
     // For system messages marked to hide from visitor, replace with "Chat ended"
     if (msg.sender_type === 'system' && msg.hide_from_visitor === true) {
       // Check if it's a visitor left/ended message
@@ -120,6 +194,74 @@ export const MessageList: React.FC<MessageListProps> = ({ messages, isTyping, is
     return msg;
   }).filter((msg): msg is Message => msg !== null); // Remove null entries
 
+  // Show rating form instead of chat content when form is open
+  if (hasRatingRequest && showRatingForm) {
+    return (
+      <div className={`h-full overflow-y-auto overflow-x-hidden bg-white ${isMobile ? 'pb-2' : ''}`}>
+        <div className={`flex justify-center items-center h-full ${isMobile ? 'px-4' : 'px-3'}`}>
+          <div className="bg-white border border-gray-200 rounded-lg p-4 w-full max-w-sm">
+            <h3 className="text-sm font-semibold text-gray-900 text-center mb-4">Please rate this chat</h3>
+            
+            {/* Rating Icons */}
+            <div className="flex justify-center gap-6 mb-4">
+              <button
+                onClick={() => setSelectedRating('thumbs_up')}
+                className={`p-2 rounded-full transition-colors ${
+                  selectedRating === 'thumbs_up' 
+                    ? 'bg-[#1E464A] text-white' 
+                    : 'text-gray-400 hover:text-gray-600'
+                }`}
+              >
+                <ThumbsUp className="w-6 h-6" />
+              </button>
+              <button
+                onClick={() => setSelectedRating('thumbs_down')}
+                className={`p-2 rounded-full transition-colors ${
+                  selectedRating === 'thumbs_down' 
+                    ? 'bg-[#1E464A] text-white' 
+                    : 'text-gray-400 hover:text-gray-600'
+                }`}
+              >
+                <ThumbsDown className="w-6 h-6" />
+              </button>
+            </div>
+            
+            {/* Comment Section */}
+            <div className="mb-4">
+              <label className="block text-xs font-medium text-gray-700 mb-2">
+                Leave a comment (optional)
+              </label>
+              <textarea
+                value={ratingComment}
+                onChange={(e) => setRatingComment(e.target.value)}
+                className="w-full p-2 text-xs border border-gray-300 rounded resize-none"
+                rows={2}
+                placeholder="Tell us about your experience..."
+              />
+            </div>
+            
+            {/* Action Buttons */}
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowRatingForm(false)}
+                className="flex-1 px-3 py-2 text-xs border border-gray-300 text-gray-700 rounded hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSubmitRating}
+                disabled={!selectedRating || isSubmittingRating}
+                className="flex-1 px-3 py-2 text-xs bg-[#1E464A] text-white rounded hover:bg-[#2a5a5e] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSubmittingRating ? 'Sending...' : 'Send'}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={`h-full overflow-y-auto overflow-x-hidden bg-white ${isMobile ? 'pb-2' : ''}`}>
       {visibleMessages.length === 0 ? (
@@ -132,6 +274,19 @@ export const MessageList: React.FC<MessageListProps> = ({ messages, isTyping, is
       ) : (
         <>
           {visibleMessages.map(renderMessage)}
+          
+          {/* Rating Interface - Show button when rating request exists */}
+          {hasRatingRequest && !showRatingForm && (
+            <div className={`flex justify-center mb-3 ${isMobile ? 'px-4' : 'px-3'}`}>
+              <button
+                onClick={() => setShowRatingForm(true)}
+                className="px-4 py-2 bg-[#1E464A] text-white rounded-lg hover:bg-[#2a5a5e] transition-colors text-sm font-medium"
+              >
+                Rate this Chat
+              </button>
+            </div>
+          )}
+
           
           {isTyping && (
             <div className={`flex justify-start mb-3 ${isMobile ? 'px-4' : 'px-3'}`}>
@@ -151,6 +306,7 @@ export const MessageList: React.FC<MessageListProps> = ({ messages, isTyping, is
           )}
         </>
       )}
+      
       <div ref={messagesEndRef} />
     </div>
   );

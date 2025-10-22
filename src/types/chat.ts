@@ -6,7 +6,7 @@ export interface Message {
   message: string;
   timestamp: string;
   status?: 'delivered' | 'read';
-  type?: 'text' | 'attachment';
+  type?: 'text' | 'attachment' | 'system';
   attachment?: {
     file_name: string;
     url: string;

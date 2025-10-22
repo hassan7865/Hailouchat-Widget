@@ -3,6 +3,7 @@ import type { Message, ChatInitiateRequest, ChatInitiateResponse } from '../type
 import { getDeviceInfo } from '../utils/deviceDetection';
 import { getLocationData, getIPAddress } from '../utils/locationDetection';
 import { generateMessageId, isDuplicateMessage } from '../utils/messageUtils';
+import { playAgentMessageSound } from '../utils/soundUtils';
 
 interface UseChatProps {
   clientId: string;
@@ -28,12 +29,36 @@ export const useChat = ({ clientId, apiBase }: UseChatProps) => {
         return prev;
       }
       
+      // Check if this is the first agent or visitor message (not system message)
+      const isAgentOrVisitorMessage = message.sender_type === 'client_agent' || message.sender_type === 'visitor';
+      const hasExistingAgentOrVisitorMessage = prev.some(msg => 
+        msg.sender_type === 'client_agent' || msg.sender_type === 'visitor'
+      );
+      
+      // If this is the first agent or visitor message, add "Chat started" system message
+      if (isAgentOrVisitorMessage && !hasExistingAgentOrVisitorMessage) {
+        const chatStartedMessage: Message = {
+          id: `chat-started-${Date.now()}`,
+          sender_type: 'system',
+          sender_id: 'system',
+          sender_name: 'System',
+          message: 'Chat started',
+          timestamp: new Date().toISOString(),
+          status: 'delivered',
+          type: 'system',
+          system_message_type: 'chat_started'
+        };
+        
+        return [...prev, chatStartedMessage, message];
+      }
+      
       return [...prev, message];
     });
   }, []);
 
   const startChat = useCallback(async (): Promise<{ visitorId: string; sessionId: string }> => {
     setLoading(true);
+    
     try {
       const locationPromise = getLocationData().catch(() => ({
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
@@ -106,7 +131,7 @@ export const useChat = ({ clientId, apiBase }: UseChatProps) => {
   }, [clientId, apiBase, addMessage]);
 
   const handleWebSocketMessage = useCallback((data: any) => {
-    if (data.type === 'chat_message' || data.type === 'attachment_message') {
+    if (data.type === 'chat_message' || data.type === 'message') {
       const currentTime = Date.now();
       
       if (currentTime - lastMessageTimeRef.current < 100) {
@@ -122,7 +147,7 @@ export const useChat = ({ clientId, apiBase }: UseChatProps) => {
       lastMessageTimeRef.current = currentTime;
       messageIdsRef.current.add(messageId);
       
-      const isAttachment = data.type === 'attachment_message' || data.attachment;
+      const isAttachment = data.type === 'message' && data.attachment;
       const newMsg: Message = {
         id: messageId,
         sender_type: data.sender_type || 'client_agent',
@@ -138,6 +163,11 @@ export const useChat = ({ clientId, apiBase }: UseChatProps) => {
       };
       
       addMessage(newMsg);
+      
+      // Play sound notification for agent messages
+      if (newMsg.sender_type === 'client_agent') {
+        playAgentMessageSound();
+      }
       
     } else if (data.type === 'typing_indicator') {
       setIsTyping(Boolean(data.is_typing && data.sender_type === 'client_agent'));
@@ -217,7 +247,7 @@ export const useChat = ({ clientId, apiBase }: UseChatProps) => {
     try {
       // 1. Get presigned URL
       const presignResponse = await fetch(
-        `${apiBase}/chat/${sessionId}/visitor/${visitorId}/attachments/presign`,
+        `${apiBase}/attachments/visitor/${sessionId}/${visitorId}/presign`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -243,13 +273,22 @@ export const useChat = ({ clientId, apiBase }: UseChatProps) => {
       // 2. Upload to S3 using presigned URL
       if (upload_url) {
         // Start with Content-Type from file, then merge backend headers (as in fe_flow_test.py)
-        const uploadHeaders: Record<string, string> = {
-          'Content-Type': file.type || 'application/octet-stream'
-        };
+        const uploadHeaders: Record<string, string> = {};
         
-        // Merge additional headers from backend response
+        // Only add Content-Type if it's specified in the file
+        if (file.type) {
+          uploadHeaders['Content-Type'] = file.type;
+        }
+        
+        // Merge additional headers from backend response (but be careful with CORS)
         if (headers) {
-          Object.assign(uploadHeaders, headers);
+          // Only add headers that are safe for CORS
+          Object.keys(headers).forEach(key => {
+            const lowerKey = key.toLowerCase();
+            if (lowerKey.startsWith('x-amz-') || lowerKey === 'content-type') {
+              uploadHeaders[key] = headers[key];
+            }
+          });
         }
 
         const uploadResponse = await fetch(upload_url, {
@@ -280,7 +319,7 @@ export const useChat = ({ clientId, apiBase }: UseChatProps) => {
 
       // 3. Commit attachment
       await fetch(
-        `${apiBase}/chat/${sessionId}/visitor/${visitorId}/attachments/upload`,
+        `${apiBase}/attachments/visitor/${sessionId}/${visitorId}/commit`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

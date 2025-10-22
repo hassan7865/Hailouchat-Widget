@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { ChatButton } from './chat/ChatButton';
 import { ChatWindow } from './chat/ChatWindow';
 import { ContactDetailsModal } from './ContactDetailsModal';
+import { EndChatModal } from './EndChatModal';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { useChat } from '../hooks/useChat';
 import type { ChatWidgetProps, ConnectionStatus, OutgoingMessage } from '../types/chat';
@@ -18,6 +19,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('disconnected');
   const [hasNewMessage, setHasNewMessage] = useState<boolean>(false);
   const [showContactModal, setShowContactModal] = useState<boolean>(false);
+  const [showEndChatModal, setShowEndChatModal] = useState<boolean>(false);
   
   const typingTimeoutRef = useRef<number | null>(null);
   const lastMessageCountRef = useRef<number>(0);
@@ -26,6 +28,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
   const {
     messages,
     visitorId,
+    sessionId,
     ipAddress,
     loading,
     isTyping,
@@ -152,6 +155,10 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
 
 
   const handleEndChat = (): void => {
+    setShowEndChatModal(true);
+  };
+
+  const handleConfirmEndChat = (): void => {
     // Send close_session message to backend (visitor wants to leave)
     if (connectionStatus === 'connected') {
       sendMessage({
@@ -162,6 +169,32 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
     
     // Keep connection alive, keep the window open
     // Don't minimize or close the widget - visitor can continue chatting
+  };
+
+  const handleHeaderRatingChange = async (rating: 'thumbs_up' | 'thumbs_down'): Promise<void> => {
+    if (!sessionId || !clientId || !apiBase) return;
+    
+    try {
+      const response = await fetch(`${apiBase}/chat/session-rating`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          client_key: clientId,
+          session_id: sessionId,
+          rating: rating,
+          note: null
+        })
+      });
+      
+      if (response.ok) {
+        // Rating submitted successfully
+        // The backend should send a system message with emoji confirmation
+      }
+    } catch (error) {
+      console.error('Error submitting rating:', error);
+    }
   };
 
   const handleToggleChat = (): void => {
@@ -214,6 +247,9 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
             isTyping={isTyping}
             connectionStatus={connectionStatus}
             visitorId={visitorId || undefined}
+            sessionId={sessionId || undefined}
+            clientId={clientId}
+            apiBase={apiBase}
             onStartChat={handleStartChat}
             onSendMessage={handleSendMessage}
             onTypingChange={handleTypingChange}
@@ -222,6 +258,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
             onEndChat={handleEndChat}
             onOpenContactModal={() => setShowContactModal(true)}
             isMobile={isMobile}
+            onHeaderRatingChange={handleHeaderRatingChange}
           />
         </div>
       )}
@@ -254,6 +291,13 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
           setShowContactModal(false);
         }}
         fetchVisitorDetails={fetchVisitorDetails}
+      />
+
+      {/* End Chat Modal */}
+      <EndChatModal
+        isOpen={showEndChatModal}
+        onClose={() => setShowEndChatModal(false)}
+        onConfirm={handleConfirmEndChat}
       />
     </div>
   );
