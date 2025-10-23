@@ -1,6 +1,6 @@
 export const DEFAULT_CONFIG = {
-  API_BASE: 'http://localhost:8000/api/v1',
-  WS_BASE: 'ws://localhost:8000',
+  API_BASE: 'https://api.hailouchat.com/api/v1',
+  WS_BASE: 'wss://api.hailouchat.com',
   POSITION: 'bottom-right' as const,
   THEME: 'light' as const,
 };
