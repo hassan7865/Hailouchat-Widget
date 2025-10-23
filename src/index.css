@@ -61,3 +61,16 @@ html, body {
   }
   
 }
+
+/* Uploading progress animation */
+@keyframes uploading-progress {
+  0% {
+    width: 0%;
+  }
+  50% {
+    width: 25%;
+  }
+  100% {
+    width: 25%;
+  }
+}

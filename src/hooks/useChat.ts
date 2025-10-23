@@ -18,6 +18,7 @@ export const useChat = ({ clientId, apiBase }: UseChatProps) => {
   const [loading, setLoading] = useState<boolean>(false);
   const [isTyping, setIsTyping] = useState<boolean>(false);
   const [ipAddress, setIpAddress] = useState<string | null>(null);
+  const [uploadingFiles, setUploadingFiles] = useState<Set<string>>(new Set());
   
   const messageIdsRef = useRef<Set<string>>(new Set());
   const lastMessageTimeRef = useRef<number>(0);
@@ -244,97 +245,41 @@ export const useChat = ({ clientId, apiBase }: UseChatProps) => {
       throw new Error('No active session');
     }
 
+    const fileKey = `${file.name}-${Date.now()}`;
+    setUploadingFiles(prev => new Set(prev).add(fileKey));
+
     try {
-      // 1. Get presigned URL
-      const presignResponse = await fetch(
-        `${apiBase}/attachments/visitor/${sessionId}/${visitorId}/presign`,
+      // Use direct upload endpoint that bypasses presigned URLs
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('caption', '');
+
+      console.log('Uploading file directly to backend:', { name: file.name, type: file.type, size: file.size });
+
+      const response = await fetch(
+        `${apiBase}/attachments/visitor/${sessionId}/${visitorId}/direct-upload`,
         {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            file_name: file.name,
-            mime_type: file.type || 'application/octet-stream',
-            size: file.size
-          })
+          body: formData
         }
       );
 
-      if (!presignResponse.ok) {
-        throw new Error('Failed to get upload URL');
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Upload failed: ${response.status} ${response.statusText} - ${errorText}`);
       }
 
-      const presignData = await presignResponse.json();
-      if (!presignData.success) {
-        throw new Error('Failed to get upload URL');
-      }
-
-      const { upload_url, headers, s3_key, public_url } = presignData;
-
-      // 2. Upload to S3 using presigned URL
-      if (upload_url) {
-        // Start with Content-Type from file, then merge backend headers (as in fe_flow_test.py)
-        const uploadHeaders: Record<string, string> = {};
-        
-        // Only add Content-Type if it's specified in the file
-        if (file.type) {
-          uploadHeaders['Content-Type'] = file.type;
-        }
-        
-        // Merge additional headers from backend response (but be careful with CORS)
-        if (headers) {
-          // Only add headers that are safe for CORS
-          Object.keys(headers).forEach(key => {
-            const lowerKey = key.toLowerCase();
-            if (lowerKey.startsWith('x-amz-') || lowerKey === 'content-type') {
-              uploadHeaders[key] = headers[key];
-            }
-          });
-        }
-
-        const uploadResponse = await fetch(upload_url, {
-          method: 'PUT',
-          body: file,
-          headers: uploadHeaders
-        });
-
-        if (!uploadResponse.ok) {
-          throw new Error(`Failed to upload file: ${uploadResponse.status}`);
-        }
-      } else if (public_url) {
-        // For public bucket mode, upload directly to public URL
-        const uploadResponse = await fetch(public_url, {
-          method: 'PUT',
-          body: file,
-          headers: {
-            'Content-Type': file.type || 'application/octet-stream'
-          }
-        });
-
-        if (!uploadResponse.ok) {
-          throw new Error('Failed to upload file to public bucket');
-        }
-      } else {
-        throw new Error('No upload URL provided');
-      }
-
-      // 3. Commit attachment
-      await fetch(
-        `${apiBase}/attachments/visitor/${sessionId}/${visitorId}/commit`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            file_name: file.name,
-            mime_type: file.type || 'application/octet-stream',
-            size: file.size,
-            s3_key: s3_key,
-            caption: ''
-          })
-        }
-      );
+      const result = await response.json();
+      console.log('Direct upload successful:', result);
     } catch (error) {
       console.error('Error uploading attachment:', error);
       throw error;
+    } finally {
+      setUploadingFiles(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(fileKey);
+        return newSet;
+      });
     }
   }, [visitorId, sessionId]);
 
@@ -345,6 +290,7 @@ export const useChat = ({ clientId, apiBase }: UseChatProps) => {
     ipAddress,
     loading,
     isTyping,
+    uploadingFiles,
     startChat,
     handleWebSocketMessage,
     resetChat,

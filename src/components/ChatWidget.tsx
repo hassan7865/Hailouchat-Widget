@@ -32,6 +32,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
     ipAddress,
     loading,
     isTyping,
+    uploadingFiles,
     startChat,
     handleWebSocketMessage,
     resetChat,
@@ -245,6 +246,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
             loading={loading}
             messages={messages}
             isTyping={isTyping}
+            uploadingFiles={uploadingFiles}
             connectionStatus={connectionStatus}
             visitorId={visitorId || undefined}
             sessionId={sessionId || undefined}

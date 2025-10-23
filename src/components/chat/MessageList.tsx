@@ -1,10 +1,13 @@
 import React, { useRef, useEffect, useState, type JSX } from 'react';
-import { Bot, User, Check, FileText, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { Bot, Check, ThumbsUp, ThumbsDown } from 'lucide-react';
 import type { Message } from '../../types/chat';
+import VisitorAttachmentMessage from './VisitorAttachmentMessage';
+import VisitorUploadingAttachment from './VisitorUploadingAttachment';
 
 interface MessageListProps {
   messages: Message[];
   isTyping: boolean;
+  uploadingFiles: Set<string>;
   isMobile?: boolean;
   sessionId?: string;
   clientId?: string;
@@ -15,6 +18,7 @@ interface MessageListProps {
 export const MessageList: React.FC<MessageListProps> = ({ 
   messages, 
   isTyping, 
+  uploadingFiles,
   isMobile = false, 
   sessionId, 
   clientId, 
@@ -34,12 +38,24 @@ export const MessageList: React.FC<MessageListProps> = ({
   }, [showRatingForm, onShowRatingFormChange]);
 
   const scrollToBottom = (): void => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    // Use setTimeout to ensure DOM has updated
+    setTimeout(() => {
+      if (messagesEndRef.current) {
+        // Try scrollIntoView first
+        messagesEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        
+        // Fallback: scroll the parent container to bottom
+        const container = messagesEndRef.current.closest('.overflow-y-auto');
+        if (container) {
+          container.scrollTop = container.scrollHeight;
+        }
+      }
+    }, 100);
   };
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages, isTyping]);
+  }, [messages, isTyping, uploadingFiles]);
 
   // Check if there's a rating request message and it hasn't been submitted yet
   const hasRatingRequest = messages.some(msg => 
@@ -111,22 +127,14 @@ export const MessageList: React.FC<MessageListProps> = ({
             
             <div className={`${isMobile ? 'px-4 py-3' : 'px-3 py-2'} rounded-2xl ${
               isVisitor 
-                ? 'bg-[#1E464A] text-white rounded-br-md' 
-                : 'bg-gray-200 text-gray-800 rounded-bl-md'
+                ? (msg.type === 'attachment' ? 'bg-transparent' : 'bg-[#1E464A] text-white rounded-br-md')
+                : (msg.type === 'attachment' ? 'bg-transparent' : 'bg-gray-200 text-gray-800 rounded-bl-md')
             }`}>
               {msg.type === 'attachment' && msg.attachment ? (
-                <div className="flex items-center gap-2">
-                  <FileText className={`${isMobile ? 'w-5 h-5' : 'w-4 h-4'} ${isVisitor ? 'text-white' : 'text-gray-600'}`} />
-                  <a
-                    href={msg.attachment.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={`${isMobile ? 'text-base' : 'text-xs'} ${isVisitor ? 'text-white underline' : 'text-blue-600 hover:underline'} truncate max-w-48`}
-                    title={msg.attachment.file_name}
-                  >
-                    {msg.attachment.file_name}
-                  </a>
-                </div>
+                <VisitorAttachmentMessage
+                  attachment={msg.attachment}
+                  isMobile={isMobile}
+                />
               ) : (
                 <p className={`${isMobile ? 'text-base' : 'text-xs'} leading-relaxed`}>{msg.message}</p>
               )}
@@ -147,11 +155,6 @@ export const MessageList: React.FC<MessageListProps> = ({
             </div>
           </div>
           
-          {isVisitor && (
-            <div className={`flex-shrink-0 ${isMobile ? 'w-8 h-8' : 'w-6 h-6'} rounded-full bg-gray-500 flex items-center justify-center`}>
-              <User className={`${isMobile ? 'w-4 h-4' : 'w-3 h-3'} text-white`} />
-            </div>
-          )}
         </div>
       </div>
     );
@@ -274,6 +277,21 @@ export const MessageList: React.FC<MessageListProps> = ({
       ) : (
         <>
           {visibleMessages.map(renderMessage)}
+          
+          {/* Uploading Progress Messages */}
+          {Array.from(uploadingFiles).map((fileKey) => {
+            // Extract filename from the fileKey (format: "filename-timestamp")
+            const fileName = fileKey.split('-').slice(0, -1).join('-');
+            
+            return (
+              <div key={fileKey} className={`flex justify-end mb-2 ${isMobile ? 'px-4' : 'px-3'}`}>
+                <VisitorUploadingAttachment
+                  fileName={fileName}
+                  isMobile={isMobile}
+                />
+              </div>
+            );
+          })}
           
           {/* Rating Interface - Show button when rating request exists */}
           {hasRatingRequest && !showRatingForm && (

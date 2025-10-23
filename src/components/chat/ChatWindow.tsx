@@ -11,6 +11,7 @@ interface ChatWindowProps {
   loading: boolean;
   messages: Message[];
   isTyping: boolean;
+  uploadingFiles: Set<string>;
   connectionStatus: ConnectionStatus;
   visitorId?: string;
   sessionId?: string;
@@ -33,6 +34,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   loading,
   messages,
   isTyping,
+  uploadingFiles,
   connectionStatus,
   visitorId, // Keep for potential future use
   sessionId,
@@ -160,6 +162,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         <MessageList
           messages={messages}
           isTyping={isTyping}
+          uploadingFiles={uploadingFiles}
           isMobile={isMobile}
           sessionId={sessionId}
           clientId={clientId}
