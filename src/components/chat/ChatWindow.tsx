@@ -36,7 +36,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   isTyping,
   uploadingFiles,
   connectionStatus,
-  visitorId, // Keep for potential future use
   sessionId,
   clientId,
   apiBase,
@@ -49,7 +48,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   onOpenContactModal,
   isMobile = false,
   onHeaderRatingChange,
-  showRatingForm = false
 }) => {
   const [isRatingFormOpen, setIsRatingFormOpen] = useState(false);
   const [headerRating, setHeaderRating] = useState<'thumbs_up' | 'thumbs_down' | null>(null);
