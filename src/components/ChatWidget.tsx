@@ -231,7 +231,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
   }, [disconnect]);
 
   return (
-    <div className={`${isMobile ? 'w-full h-full' : 'w-full h-full'} relative ${isMobile ? 'mobile-chat-widget' : ''} border border-gray-200`}>
+    <div className={`${isMobile ? 'w-full h-full' : 'w-full h-full'} relative ${isMobile ? 'mobile-chat-widget' : ''}`}>
       {!isOpen ? (
         <div className={`absolute bottom-4 right-4 transition-all duration-300 ${hasNewMessage ? 'animate-bounce' : ''}`}>
           <ChatButton
@@ -240,7 +240,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
           />
         </div>
       ) : (
-        <div className={`${isMobile ? 'w-full h-full' : 'w-full h-full'} bg-white ${isMobile ? 'rounded-none' : 'rounded-b-2xl'} shadow-2xl overflow-hidden flex flex-col animate-in slide-in-from-bottom-4 duration-300`}>
+        <div className={`${isMobile ? 'w-full h-full' : 'w-full h-full'} bg-white ${isMobile ? 'rounded-none' : 'rounded-b-2xl'} shadow-2xl overflow-hidden flex flex-col animate-in slide-in-from-bottom-4 duration-300 border border-gray-200`}>
           <ChatWindow
             chatStarted={chatStarted}
             loading={loading}

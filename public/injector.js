@@ -18,8 +18,18 @@
   let initialViewportHeight = window.innerHeight;
   let resizeTimer;
 
-  // Check if mobile
-  const isMobile = () => window.innerWidth <= 768;
+  const isMobile = () => {
+    const ua = navigator.userAgent;
+    const mobileUA = /Mobi|Android|iPhone|iPad|iPod/i.test(ua);
+    const narrowScreen =
+      (window.innerWidth || document.documentElement.clientWidth) <= 768;
+    try {
+      const parentNarrow = parent.innerWidth <= 768;
+      return mobileUA || narrowScreen || parentNarrow;
+    } catch {
+      return mobileUA || narrowScreen;
+    }
+  };
 
   // Create elements
   const chatContainer = document.createElement("div");
@@ -31,29 +41,31 @@
   const pageTitle = document.title;
   iframe.src = `${baseUrl}?client_id=${clientId}&parent_url=${encodeURIComponent(
     parentUrl
-  )}&parent_referrer=${encodeURIComponent(parentReferrer)}&page_title=${encodeURIComponent(pageTitle)}&is_mobile=${isMobile()}`;
+  )}&parent_referrer=${encodeURIComponent(
+    parentReferrer
+  )}&page_title=${encodeURIComponent(pageTitle)}&is_mobile=${isMobile()}`;
 
   // Set body scroll state
   function setBodyScroll(locked) {
     if (locked) {
-      document.body.style.overflow = 'hidden';
-      document.body.style.position = 'fixed';
-      document.body.style.width = '100%';
-      document.body.style.height = '100%';
-      document.documentElement.style.overflow = 'hidden';
+      document.body.style.overflow = "hidden";
+      document.body.style.position = "fixed";
+      document.body.style.width = "100%";
+      document.body.style.height = "100%";
+      document.documentElement.style.overflow = "hidden";
     } else {
-      document.body.style.overflow = '';
-      document.body.style.position = '';
-      document.body.style.width = '';
-      document.body.style.height = '';
-      document.documentElement.style.overflow = '';
+      document.body.style.overflow = "";
+      document.body.style.position = "";
+      document.body.style.width = "";
+      document.body.style.height = "";
+      document.documentElement.style.overflow = "";
     }
   }
 
   // Set fullscreen mode
   function setFullscreen() {
     setBodyScroll(true);
-    
+
     chatContainer.style.cssText = `
       position: fixed !important;
       top: 0 !important;
@@ -68,7 +80,7 @@
       margin: 0 !important;
       padding: 0 !important;
     `;
-    
+
     iframe.style.cssText = `
       position: absolute !important;
       top: env(safe-area-inset-top, 0) !important;
@@ -96,7 +108,7 @@
   // Set widget (button) mode
   function setWidgetSize() {
     setBodyScroll(false);
-    
+
     chatContainer.style.cssText = `
       position: fixed;
       top: 0;
@@ -112,36 +124,40 @@
       margin: 0;
       padding: 0;
     `;
-    
+
     const mobile = isMobile();
     const screenWidth = window.innerWidth;
     const screenHeight = window.innerHeight;
-    
+
     // Responsive dimensions based on screen size
     let width, height;
     if (mobile) {
       // Mobile: use percentage of screen width/height
-      width = Math.min(screenWidth * 0.9, 400) + 'px';
-      height = Math.min(screenHeight * 0.6, 500) + 'px';
+      width = Math.min(screenWidth * 0.9, 400) + "px";
+      height = Math.min(screenHeight * 0.6, 500) + "px";
     } else {
       // Desktop: responsive based on screen size
       if (screenWidth < 1200) {
-        width = '300px';
-        height = '450px';
+        width = "300px";
+        height = "450px";
       } else if (screenWidth < 1600) {
-        width = '320px';
-        height = '500px';
+        width = "320px";
+        height = "500px";
       } else {
-        width = '350px';
-        height = '550px';
+        width = "350px";
+        height = "550px";
       }
     }
-    
+
     iframe.style.cssText = `
       position: relative;
       width: ${width};
       height: ${height};
-      margin: ${mobile ? 'calc(15px + env(safe-area-inset-bottom, 0)) calc(15px + env(safe-area-inset-right, 0)) 15px 15px' : '20px'};
+      margin: ${
+        mobile
+          ? "calc(15px + env(safe-area-inset-bottom, 0)) calc(15px + env(safe-area-inset-right, 0)) 15px 15px"
+          : "20px"
+      };
       border: none;
       border-radius: 10px;
       pointer-events: auto;
@@ -156,11 +172,14 @@
 
   // Handle keyboard state change
   function notifyKeyboardState(open, height) {
-    iframe.contentWindow.postMessage({
-      type: 'KEYBOARD_STATE_CHANGE',
-      isKeyboardOpen: open,
-      viewportHeight: height
-    }, '*');
+    iframe.contentWindow.postMessage(
+      {
+        type: "KEYBOARD_STATE_CHANGE",
+        isKeyboardOpen: open,
+        viewportHeight: height,
+      },
+      "*"
+    );
   }
 
   // Handle messages from iframe
@@ -190,12 +209,12 @@
       const currentHeight = window.innerHeight;
       const heightDiff = initialViewportHeight - currentHeight;
       const newKeyboardState = heightDiff > 150;
-      
+
       if (newKeyboardState !== isKeyboardOpen) {
         isKeyboardOpen = newKeyboardState;
         notifyKeyboardState(isKeyboardOpen, currentHeight);
       }
-      
+
       if (isFullscreen && isMobile()) {
         setFullscreen();
       } else if (!isFullscreen) {
@@ -211,14 +230,14 @@
   } else {
     setWidgetSize();
   }
-  
+
   chatContainer.appendChild(iframe);
   document.body.appendChild(chatContainer);
 
   // Event listeners
   window.addEventListener("message", handleMessage);
   window.addEventListener("resize", handleViewportChange);
-  
+
   window.addEventListener("orientationchange", () => {
     setTimeout(() => {
       initialViewportHeight = window.innerHeight;
@@ -226,14 +245,14 @@
       handleViewportChange();
     }, 500);
   });
-  
+
   // Visual viewport for better keyboard detection
   if (window.visualViewport) {
-    window.visualViewport.addEventListener('resize', () => {
+    window.visualViewport.addEventListener("resize", () => {
       const currentHeight = window.visualViewport.height;
       const heightDiff = initialViewportHeight - currentHeight;
       const newKeyboardState = heightDiff > 150;
-      
+
       if (newKeyboardState !== isKeyboardOpen) {
         isKeyboardOpen = newKeyboardState;
         notifyKeyboardState(isKeyboardOpen, currentHeight);

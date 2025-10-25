@@ -29,7 +29,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
   return (
     <div className="bg-[#17494d] text-white relative">
       {/* Main Header */}
-      <div className={`${isMobile ? 'p-4' : 'pt-7 pb-3'} flex items-center justify-between`}>
+      <div className={`${isMobile ? 'p-4' : 'pt-2 pb-3'} flex items-center justify-between`}>
         {/* Left side - Mobile options button or empty space */}
         <div className="w-20">
           {isMobile && (
