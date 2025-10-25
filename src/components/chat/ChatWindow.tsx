@@ -60,17 +60,13 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
   // Auto-start chat when window opens if not already started
   useEffect(() => {
-    if (!chatStarted && !loading) {
+    if (!chatStarted && !loading && connectionStatus === 'disconnected') {
       onStartChat();
     }
-  }, [chatStarted, loading]); // Remove onStartChat from dependencies to prevent multiple calls
+  }, [chatStarted, loading, connectionStatus]); // Remove onStartChat from dependencies to prevent multiple calls
 
-  // Auto-minimize when session ends (disconnected)
-  useEffect(() => {
-    if (connectionStatus === 'disconnected' && chatStarted) {
-      onClose();
-    }
-  }, [connectionStatus, chatStarted, onClose]);
+  // Note: Removed auto-close mechanism to prevent widget from closing during connection issues
+  // The widget should stay open and allow reconnection attempts
 
   // Check if there's a rating request message (use original messages, not filtered)
   const hasRatingRequest = messages.some(msg => 
@@ -88,6 +84,23 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
      (msg.system_message_type === 'rating_confirmation' || 
       msg.message.includes('👍') || msg.message.includes('👎'))
    )?.message?.includes('👎') ? 'thumbs_down' : null;
+
+  // Get the first agent's name from "agent joined" system message
+  const getAgentName = () => {
+    const agentJoinedMessage = messages.find(msg => 
+      msg.sender_type === 'system' && msg.system_message_type === 'agent_joined'
+    );
+    
+    if (agentJoinedMessage) {
+      // Extract agent name from message like "John has joined the chat"
+      const match = agentJoinedMessage.message.match(/^(.+?)\s+has joined the chat$/);
+      return match ? match[1] : 'Live Support';
+    }
+    
+    return 'Live Support';
+  };
+
+  const agentName = getAgentName();
 
   // Update header rating when current rating changes
   useEffect(() => {
@@ -117,7 +130,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                 <Bell className={`${isMobile ? 'w-4 h-4' : 'w-3 h-3'} text-white`} />
               </div>
               <div>
-                <h4 className={`font-semibold ${isMobile ? 'text-sm' : 'text-xs'} text-gray-900 font-bold`}>Live Support</h4>
+                <h4 className={`font-semibold ${isMobile ? 'text-sm' : 'text-xs'} text-gray-900 font-bold`}>{agentName}</h4>
                 <p className={`${isMobile ? 'text-sm' : 'text-xs'} text-gray-500 font-semibold`}>Customer Support</p>
               </div>
             </div>

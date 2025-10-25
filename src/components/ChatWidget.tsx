@@ -110,11 +110,18 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
     
     try {
       const { visitorId: newVisitorId, sessionId: newSessionId } = await startChat();
-      setChatStarted(true);
       
       const wsUrl = `${wsBase}/ws/chat/${newSessionId}/visitor/${newVisitorId}`;
-      connect(wsUrl);
+      
+      // Wait longer for the backend to be ready, then connect
+      setTimeout(() => {
+        connect(wsUrl);
+        // Only mark as started after WebSocket connection attempt
+        setChatStarted(true);
+      }, 500);
+      
     } catch (error) {
+      console.error('Error starting chat:', error);
       // Reset the flag on error so it can be retried
       chatStartAttemptedRef.current = false;
     }

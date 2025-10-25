@@ -43,9 +43,16 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
           )}
         </div>
         
-        {/* Center - Chat with us text */}
-        <div className="flex-1 flex justify-center">
+        {/* Center - Chat with us text and connection status */}
+        <div className="flex-1 flex justify-center items-center gap-2">
           <h3 className={`font-semibold ${isMobile ? 'text-base' : 'text-sm'}`}>Chat with us</h3>
+          {/* Connection status indicator */}
+          <div className={`w-2 h-2 rounded-full ${
+            connectionStatus === 'connected' ? 'bg-green-400' :
+            connectionStatus === 'connecting' ? 'bg-yellow-400 animate-pulse' :
+            connectionStatus === 'disconnected' ? 'bg-gray-400' :
+            'bg-red-400'
+          }`} title={`Connection: ${connectionStatus}`} />
         </div>
         
         {/* Right side - Square and Minimize buttons */}

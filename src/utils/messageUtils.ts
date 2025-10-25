@@ -6,9 +6,13 @@ export const generateMessageId = (): string => {
 };
 
 export const formatTime = (timestamp: string): string => {
-  return new Date(timestamp).toLocaleTimeString([], { 
-    hour: '2-digit', 
-    minute: '2-digit' 
+  // Ensure we're working with UTC timestamps and convert to local time for display
+  const utcDate = new Date(timestamp);
+  return utcDate.toLocaleTimeString([], { 
+    hour: 'numeric', 
+    minute: '2-digit', 
+    hour12: true,
+    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
   });
 };
 

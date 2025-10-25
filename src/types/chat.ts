@@ -45,7 +45,7 @@ export interface ChatInitiateResponse {
 }
 
 export interface WebSocketMessage {
-  type: 'chat_message' | 'attachment_message' | 'typing_indicator' | 'chat_connected' | 'message_seen';
+  type: 'chat_message' | 'attachment_message' | 'typing_indicator' | 'chat_connected' | 'message_seen' | 'heartbeat_response';
   sender_type?: 'visitor' | 'client_agent' | 'system';
   sender_id?: string;
   sender_name?: string | null;
@@ -65,7 +65,7 @@ export interface WebSocketMessage {
 }
 
 export interface OutgoingMessage {
-  type: 'chat_message' | 'typing_indicator' | 'message_seen' | 'close_session';
+  type: 'chat_message' | 'typing_indicator' | 'message_seen' | 'close_session' | 'heartbeat';
   message?: string;
   is_typing?: boolean;
   message_id?: string;
