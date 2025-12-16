@@ -32,6 +32,9 @@ export interface VisitorMetadata {
   device_type?: string;
   browser?: string;
   os?: string;
+  matchtype?: string;
+  keyword?: string;
+  platform?: string;
 }
 
 export interface ChatInitiateRequest {

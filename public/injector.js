@@ -31,6 +31,58 @@
     }
   };
 
+  // Extract tracking parameters from URL
+  const getTrackingParams = () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const matchtype = urlParams.get('matchtype') || urlParams.get('match_type') || null;
+    const keyword = urlParams.get('keyword') || null;
+    return { matchtype, keyword };
+  };
+
+  // Detect platform from referrer or URL
+  const detectPlatform = () => {
+    const referrer = document.referrer.toLowerCase();
+    const currentUrl = window.location.href.toLowerCase();
+    
+    // Check referrer first
+    if (referrer.includes('facebook.com') || referrer.includes('fb.com') || currentUrl.includes('facebook.com')) {
+      return 'facebook';
+    }
+    if (referrer.includes('instagram.com') || currentUrl.includes('instagram.com')) {
+      return 'instagram';
+    }
+    if (referrer.includes('google.com') || referrer.includes('googleadservices.com') || currentUrl.includes('gclid=')) {
+      return 'google_ads';
+    }
+    if (referrer.includes('twitter.com') || referrer.includes('x.com') || currentUrl.includes('twitter.com') || currentUrl.includes('x.com')) {
+      return 'twitter';
+    }
+    if (referrer.includes('linkedin.com') || currentUrl.includes('linkedin.com')) {
+      return 'linkedin';
+    }
+    if (referrer.includes('tiktok.com') || currentUrl.includes('tiktok.com')) {
+      return 'tiktok';
+    }
+    if (referrer.includes('snapchat.com') || currentUrl.includes('snapchat.com')) {
+      return 'snapchat';
+    }
+    if (referrer.includes('pinterest.com') || currentUrl.includes('pinterest.com')) {
+      return 'pinterest';
+    }
+    if (referrer.includes('youtube.com') || referrer.includes('youtu.be') || currentUrl.includes('youtube.com') || currentUrl.includes('youtu.be')) {
+      return 'youtube';
+    }
+    
+    // Check for UTM parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const utmSource = urlParams.get('utm_source');
+    if (utmSource) {
+      return utmSource.toLowerCase();
+    }
+    
+    return null;
+  };
+
   // Create elements
   const chatContainer = document.createElement("div");
   chatContainer.id = "hailou-chat-widget";
@@ -39,11 +91,28 @@
   const parentUrl = window.location.href;
   const parentReferrer = document.referrer;
   const pageTitle = document.title;
-  iframe.src = `${baseUrl}?client_id=${clientId}&parent_url=${encodeURIComponent(
-    parentUrl
-  )}&parent_referrer=${encodeURIComponent(
-    parentReferrer
-  )}&page_title=${encodeURIComponent(pageTitle)}&is_mobile=${isMobile()}`;
+  const { matchtype, keyword } = getTrackingParams();
+  const platform = detectPlatform();
+  
+  // Build iframe URL with all parameters
+  const iframeParams = new URLSearchParams();
+  iframeParams.set('client_id', clientId);
+  iframeParams.set('parent_url', parentUrl);
+  iframeParams.set('parent_referrer', parentReferrer);
+  iframeParams.set('page_title', pageTitle);
+  iframeParams.set('is_mobile', isMobile());
+  
+  if (matchtype) {
+    iframeParams.set('matchtype', matchtype);
+  }
+  if (keyword) {
+    iframeParams.set('keyword', keyword);
+  }
+  if (platform) {
+    iframeParams.set('platform', platform);
+  }
+  
+  iframe.src = `${baseUrl}?${iframeParams.toString()}`;
 
   // Set body scroll state
   function setBodyScroll(locked) {
