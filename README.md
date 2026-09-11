@@ -1,39 +1,66 @@
-# Hailouchat Widget
+# Hailou Chat Widget
 
-Embeddable chat widget built with React, TypeScript, and Vite.
+Embeddable visitor chat widget for Hailou Chat. React + TypeScript + Vite, with REST chat initiation and WebSocket messaging.
 
 ## Overview
 
-Hailouchat-Widget is a lightweight chat UI intended to be embedded or integrated into host applications. It is a Vite-based React library/app rather than a full backend.
+Sites load an injector script with a `data-client-id`. The injector mounts an iframe to the widget app, passing parent page URL, referrer, title, and mobile hints. The widget starts a visitor session (device + approximate location metadata), then exchanges messages over WebSocket with typing indicators, read receipts, attachments, and contact-details / end-chat flows.
+
+## Features
+
+- Floating chat button and chat window (desktop + mobile layouts)
+- Session start via Hailou Chat HTTP API; realtime via WebSocket
+- Typing indicators, message seen, attachment upload
+- Contact details modal and end-chat confirmation
+- Duplicate-message guards and auto-reconnect on non-clean WS close
+- Example host page and `public/injector.js` for drop-in embedding
 
 ## Stack
 
-- React
-- TypeScript
-- Vite
+- React 19, TypeScript, Vite 7
+- Tailwind CSS (`@tailwindcss/vite`)
+- Lucide icons
+- Native WebSocket (no extra realtime SDK)
 
 ## Structure
 
 ```
-src/           # Widget source
-public/        # Static assets
-index.html
-vite.config.ts
+src/
+  components/     # ChatWidget, chat UI, modals
+  hooks/          # useChat, useWebSocket
+  config/         # API / WS defaults
+  utils/          # Device, location, message helpers
+  types/          # Chat types
+public/
+  injector.js     # Host-page embed script
+  example.html    # Sample integration page
 ```
 
-## Getting started
+## How to run
 
 ```bash
 npm install
 npm run dev
 ```
 
-Production build:
+Build:
 
 ```bash
 npm run build
+npm run preview
 ```
 
-## Integration
+## Embed
 
-Build the widget and include the generated assets in the host page, or import components from `src/` depending on your embedding approach. Configure the chat API endpoint via environment or props — never hardcode secrets.
+1. Serve the built widget (or point the injector `baseUrl` at your Vite dev server).
+2. On the host page:
+
+```html
+<script
+  src="https://your-widget-host/injector.js"
+  data-client-id="YOUR_CLIENT_ID"
+  async
+></script>
+```
+
+Configure API/WS bases in `src/config/chatConfig.ts` for your environment. Do not commit private keys or production client secrets into the repo.
